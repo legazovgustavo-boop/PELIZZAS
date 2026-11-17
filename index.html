@@ -38,14 +38,15 @@
                     <p class="text-xs text-gold-400 uppercase tracking-widest">Barber Shop</p>
                 </div>
             </div>
+            <!-- Botão de Acesso Barbeiros / Gerente -->
             <button onclick="openManagerModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2">
-                <i class="fa-solid fa-lock"></i>
-                <span>Área do Gerente</span>
+                <i class="fa-solid fa-user-shield"></i>
+                <span>Área dos Barbeiros / Gerente</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Navigation Tabs -->
+    <!-- Main Navigation Tabs (Visão do Cliente) -->
     <nav class="bg-dark-900 border-b border-gray-800">
         <div class="max-w-4xl mx-auto px-4 flex space-x-2 py-2 overflow-x-auto">
             <button onclick="switchTab('booking')" id="tab-booking" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 bg-gold-500 text-black shadow">
@@ -54,7 +55,7 @@
             </button>
             <button onclick="switchTab('my-appointments')" id="tab-my-appointments" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 text-gray-400 hover:text-white">
                 <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>Meus Agendamentos</span>
+                <span>Meus Atendimentos</span>
             </button>
             <button onclick="switchTab('barbers')" id="tab-barbers" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 text-gray-400 hover:text-white">
                 <i class="fa-solid fa-users"></i>
@@ -66,23 +67,23 @@
     <!-- Main Content -->
     <main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6 pb-24">
 
-        <!-- TAB 1: AGENDAR -->
+        <!-- TAB 1: AGENDAR (Cliente) -->
         <section id="content-booking" class="space-y-6">
             <div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
                 <h2 class="text-xl font-bold text-white mb-1">Novo Agendamento</h2>
-                <p class="text-xs text-gray-400 mb-6">Preencha os dados abaixo para garantir seu atendimento.</p>
+                <p class="text-xs text-gray-400 mb-6">Preencha seus dados para marcar seu horário com nossa equipe.</p>
                 
                 <form id="appointmentForm" onsubmit="handleBooking(event)" class="space-y-5">
                     <div>
                         <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Serviço Desejado</label>
                         <select id="booking-service" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
                             <option value="" disabled selected>Selecione um serviço</option>
-                            <!-- Dinâmico gerido pelo gerente -->
+                            <!-- Dinâmico gerido pelos barbeiros/gerência -->
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Profissional</label>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Profissional (Barbeiro)</label>
                         <select id="booking-barber" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
                             <option value="" disabled selected>Selecione o Barbeiro</option>
                             <option value="Jô">Jô</option>
@@ -119,13 +120,19 @@
                             <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Seu Nome Completo</label>
                             <input type="text" id="client-name" placeholder="Ex: Lucas Silva" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Seu WhatsApp / Telefone</label>
-                            <input type="tel" id="client-phone" placeholder="Ex: (11) 99999-9999" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Telefone / WhatsApp</label>
+                                <input type="tel" id="client-phone" placeholder="Ex: (11) 99999-9999" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">E-mail do Cliente</label>
+                                <input type="email" id="client-email" placeholder="Ex: lucas@email.com" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Política de Cancelamento Aviso -->
+                    <!-- Política de Cancelamento -->
                     <div class="bg-dark-800/60 border border-gray-800 rounded-xl p-3 text-xs text-gray-400">
                         <i class="fa-solid fa-triangle-exclamation text-gold-400 mr-1"></i>
                         <strong>Política de Cancelamento:</strong> O cancelamento só é permitido com até <strong>1 hora de antecedência</strong> do horário agendado.
@@ -139,10 +146,10 @@
             </div>
         </section>
 
-        <!-- TAB 2: MEUS AGENDAMENTOS -->
+        <!-- TAB 2: MEUS ATENDIMENTOS (Cliente) -->
         <section id="content-my-appointments" class="hidden space-y-6">
             <div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
-                <h2 class="text-xl font-bold text-white mb-1">Meus Agendamentos</h2>
+                <h2 class="text-xl font-bold text-white mb-1">Meus Atendimentos</h2>
                 <p class="text-xs text-gray-400 mb-6">Acompanhe seus horários marcados ou cancele (respeitando o limite de 1h).</p>
                 <div id="appointments-list" class="space-y-4"></div>
             </div>
@@ -175,44 +182,44 @@
 
     </main>
 
-    <!-- Modal / Painel do Gerente (Senha 1234) -->
+    <!-- Modal / Painel dos Barbeiros e Gerente (Senha 1234 compartilhada para Jô, Claudinho e Bochecha) -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
 
-            <!-- Login View -->
+            <!-- Login View (Mesma senha para os 3 Barbeiros / Gestor) -->
             <div id="admin-login-view">
-                <h3 class="text-lg font-bold text-white mb-1">Área do Gerente / Gestão</h3>
-                <p class="text-xs text-gray-400 mb-4">Digite a senha administrativa (Senha padrão: 1234)</p>
+                <h3 class="text-lg font-bold text-white mb-1"><i class="fa-solid fa-user-shield text-gold-400 mr-2"></i> Acesso Exclusivo (Barbeiros / Gerente)</h3>
+                <p class="text-xs text-gray-400 mb-4">Utilize a senha de acesso compartilhada para Jô, Claudinho e Bochecha (Senha padrão: <strong>1234</strong>)</p>
                 <input type="password" id="admin-pass" placeholder="Senha" class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-gold-400">
                 <button onclick="checkAdminPassword()" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3 rounded-xl transition">Entrar no Painel</button>
             </div>
 
-            <!-- Dashboard View -->
+            <!-- Dashboard View (Visão de Gestão dos Barbeiros) -->
             <div id="admin-dashboard-view" class="hidden space-y-6">
                 <div class="border-b border-gray-800 pb-3 flex justify-between items-center">
                     <div>
-                        <h3 class="text-lg font-bold text-white">Painel Administrativo</h3>
-                        <p class="text-xs text-gray-400">Gerencie valores de serviços e visualize a agenda futura.</p>
+                        <h3 class="text-lg font-bold text-white">Painel dos Barbeiros / Gerência</h3>
+                        <p class="text-xs text-gray-400">Manutenção de valores, notificações e visualização da agenda futura.</p>
                     </div>
                     <button onclick="logoutAdmin()" class="text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
                 </div>
 
-                <!-- Gestão de Preços dos Serviços -->
+                <!-- Manutenção de Valores dos Serviços -->
                 <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-4 space-y-3">
-                    <h4 class="font-bold text-sm text-gold-400"><i class="fa-solid fa-tag mr-1"></i> Alterar Valores dos Serviços</h4>
+                    <h4 class="font-bold text-sm text-gold-400"><i class="fa-solid fa-tag mr-1"></i> Manutenção de Valores dos Serviços</h4>
                     <div id="services-price-list" class="space-y-3">
                         <!-- Gerado dinamicamente -->
                     </div>
                     <button onclick="saveServicePrices()" class="bg-gold-500 hover:bg-gold-600 text-black font-bold text-xs py-2 px-4 rounded-lg transition">Salvar Novos Preços</button>
                 </div>
 
-                <!-- Painel de Visualização de Agendamentos Futuros -->
+                <!-- Painel de Agendamentos (Visualização Futura) -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-calendar-check mr-1 text-gold-400"></i> Agendamentos Futuros (Visualização)</h4>
+                        <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-calendar-check mr-1 text-gold-400"></i> Histórico / Agendamentos Futuros</h4>
                         <span id="total-appointments-count" class="text-xs bg-dark-800 px-2.5 py-1 rounded-full text-gold-400 border border-gray-700">0 agendamentos</span>
                     </div>
                     <div id="admin-appointments-list" class="space-y-3 max-h-60 overflow-y-auto pr-1">
@@ -225,7 +232,7 @@
 
     <!-- Script Principal -->
     <script>
-        // Serviços padrão iniciais do sistema
+        // Serviços padrão
         const defaultServices = [
             { id: 'corte', name: 'Corte de Cabelo', price: 40.00 },
             { id: 'barba', name: 'Barba Completa', price: 30.00 },
@@ -266,7 +273,7 @@
             return data ? JSON.parse(data) : [];
         }
 
-        // Realizar Agendamento e disparar notificação simulada ao gestor/barbeiro
+        // Realizar Agendamento (Notificação ao Barbeiro por telefone/e-mail simulada e registada)
         function handleBooking(e) {
             e.preventDefault();
             const serviceSelect = document.getElementById('booking-service').value.split('|');
@@ -277,6 +284,7 @@
             const time = document.getElementById('booking-time').value;
             const clientName = document.getElementById('client-name').value;
             const clientPhone = document.getElementById('client-phone').value;
+            const clientEmail = document.getElementById('client-email').value;
 
             const newApp = {
                 id: Date.now(),
@@ -287,55 +295,27 @@
                 time,
                 clientName,
                 clientPhone,
+                clientEmail,
                 createdAt: new Date().toISOString()
             };
 
-            const appointments = getAppointments();
+            let appointments = getAppointments();
             appointments.push(newApp);
             localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
 
-            // Simulação de notificação ao barbeiro/gestor (por telefone/WhatsApp ou email)
-            console.log(`[NOTIFICAÇÃO ENVIADA AO BARBEIRO ${barber}]: Novo agendamento de ${clientName} para ${date} às ${time}.`);
-            alert(`Agendamento realizado com sucesso!\n\nUma notificação foi enviada ao barbeiro ${barber}.`);
+            // Simulação de disparo de notificação ao barbeiro por telefone e e-mail
+            console.log(`[NOTIFICAÇÃO DISPARADA AO BARBEIRO ${barber}]: Novo agendamento de ${clientName} (${clientPhone} | ${clientEmail}) para ${date} às ${time}.`);
+            
+            alert(`Agendamento realizado com sucesso!\n\nUma notificação via sistema foi enviada ao profissional ${barber} (Telefone e E-mail registados).`);
 
             document.getElementById('appointmentForm').reset();
             document.getElementById('booking-date').min = todayStr;
             switchTab('my-appointments');
         }
 
-        // Regra de Cancelamento (Bloqueio se faltar menos de 1 hora)
+        // Regra de Cancelamento: Bloqueio se faltar menos de 1 hora
         function cancelAppointment(id, dateStr, timeStr) {
-            // Montar data e hora do compromisso
             const appointmentDateTime = new Date(`${dateStr}T${timeStr}:00`);
             const now = new Date();
-
-            // Diferença em milissegundos
             const diffMs = appointmentDateTime - now;
-            const diffHours = diffMs / (1000 * 60 * 60);
-
-            if (diffHours < 1) {
-                alert('Aviso: O cancelamento não é permitido com menos de 1 hora de antecedência do horário agendado.');
-                return;
-            }
-
-            if(confirm('Deseja realmente cancelar este agendamento?')) {
-                let appointments = getAppointments();
-                appointments = appointments.filter(app => app.id !== id);
-                localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
-                renderAppointments();
-                alert('Agendamento cancelado com sucesso.');
-            }
-        }
-
-        function renderAppointments() {
-            const listContainer = document.getElementById('appointments-list');
-            const appointments = getAppointments();
-
-            if (appointments.length === 0) {
-                listContainer.innerHTML = '<div class="text-center py-8 text-gray-500 text-sm">Nenhum agendamento encontrado.</div>';
-                return;
-            }
-
-            listContainer.innerHTML = appointments.map(app => {
-                return `
-      
+            const diffHours = diff
