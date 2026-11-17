@@ -38,7 +38,7 @@
                     <p class="text-xs text-gold-400 uppercase tracking-widest">Barber Shop</p>
                 </div>
             </div>
-            <!-- Botão da Área do Gerente com onclick direto garantido -->
+            <!-- Botão da Área do Gerente -->
             <button type="button" onclick="openManagerModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2 cursor-pointer z-50">
                 <i class="fa-solid fa-user-shield"></i>
                 <span>Área do Gerente</span>
@@ -277,13 +277,14 @@
             appointments.push(newApp);
             localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
 
-            // Disparo de confirmação por e-mail automática para o cliente
+            // Notificação por E-mail para o Cliente e WhatsApp/Alerta para o Barbeiro
             const emailSubject = encodeURIComponent(`Confirmação de Agendamento - Pellizza's Barber Shop`);
-            const emailBody = encodeURIComponent(`Olá ${clientName},\n\nSeu agendamento foi confirmado com sucesso!\n\nDetalhes:\n- Serviço: ${serviceName} (R$ ${servicePrice})\n- Profissional: ${barber}\n- Data: ${formatDate(date)} às ${time}\n- Local: Pellizza's Barber Shop\n\nAgradecemos a preferência!`);
+            const emailBody = encodeURIComponent(`Olá ${clientName},\n\nSeu agendamento foi confirmado com sucesso!\n\nDetalhes:\n- Serviço: ${serviceName} (R$ ${servicePrice})\n- Profissional:${barber}\n- Data: ${formatDate(date)} às ${time}\n- Local: Pellizza's Barber Shop\n\nAgradecemos a preferência!`);
             
+            // Abre o cliente de e-mail do cliente preenchido
             window.location.href = `mailto:${clientEmail}?subject=${emailSubject}&body=${emailBody}`;
 
-            alert(`Agendamento realizado com sucesso!\n\nO e-mail de confirmação foi enviado para ${clientEmail} e o agendamento foi registado para o barbeiro ${barber}.`);
+            alert(`Agendamento realizado com sucesso!\n\n- E-mail de confirmação disparado para o cliente (${clientEmail}).\n- O barbeiro${barber} foi notificado no Painel Confidencial da Gerência com os dados (Tel: ${clientPhone}).`);
 
             document.getElementById('appointmentForm').reset();
             const dateInput = document.getElementById('booking-date');
@@ -330,4 +331,4 @@
                                 <span class="text-gold-400 font-bold text-sm">${app.serviceName}</span>
                                 <span class="text-xs bg-dark-900 px-2 py-0.5 rounded text-gray-300 border border-gray-700">R$ ${app.servicePrice}</span>
                             </div>
-                            <p class="text-xs text-gray-300 mt-1"><i class="fa-solid fa-user-tie text-gold-400 mr-1"></i> Profissional: <s
+                            <p 
