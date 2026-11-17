@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pellizza's Barber Shop - Gestão & Agendamento</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        gold: {
+                            400: '#D4AF37',
+                            500: '#C5A028',
+                            600: '#A38118',
+                        },
+                        dark: {
+                            950: '#0A0C0E',
+                            900: '#0F1115',
+                            800: '#161920',
+                            700: '#212631',
+                            600: '#2D3444',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0F1115;
+            color: #E2E8F0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(22, 25, 32, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card {
+            background: rgba(33, 38, 49, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-card:hover {
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F1115;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2D3444;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #C5A028;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-gold-500 selection:text-black">
+
+    <!-- Header & Navegação Principal -->
+    <header class="sticky top-0 z-40 border-b border-gray-800 bg-dark-900/90 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Logo & Marca -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('client')">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gold-600 to-gold-400 flex items-center justify-center text-dark-950 font-bold shadow-lg shadow-gold-500/10">
+                    <i class="fa-solid fa-scissors font-bold text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight text-white leading-none">
+                        PELLIZZA'S
+                    </h1>
+                    <span class="text-[10px] font-semibold text-gold-400 tracking-widest uppercase">Barber Shop</span>
+                </div>
+            </div>
+
+            <!-- Abas de Navegação -->
+            <nav class="flex bg-dark-800 p-1 rounded-xl border border-gray-800 text-xs sm:text-sm overflow-x-auto w-full sm:w-auto">
+                <button id="tab-client" onclick="switchTab('client')" 
+                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 bg-gold-500 text-dark-950 shadow-md">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>Cliente</span>
+                </button>
+                <button id="tab-barber" onclick="switchTab('barber')" 
+                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium text-gray-400 hover:text-white transition-all duration-200">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Barbeiros</span>
+                </button>
+                <button id="tab-manager" onclick="switchTab('manager')" 
+                    class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium text-gray-400 hover:text-white transition-all duration-200">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>Gerente</span>
+                </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- ==================== ABA 1: ÁREA DO CLIENTE ==================== -->
+        <section id="view-client" class="space-y-8">
+            
+            <!-- Sub-abas do Cliente -->
+            <div class="flex justify-center border-b border-gray-800 pb-3">
+                <div class="inline-flex bg-dark-800 p-1 rounded-xl border border-gray-800 text-xs sm:text-sm">
+                    <button id="subtab-new-booking" onclick="switchClientSubtab('new')" 
+                        class="px-4 py-2 rounded-lg font-bold bg-gold-500 text-dark-950 transition">
+                        <i class="fa-solid fa-plus-circle mr-1"></i> Novo Agendamento
+                    </button>
+                    <button id="subtab-my-bookings" onclick="switchClientSubtab('my')" 
+                        class="px-4 py-2 rounded-lg font-bold text-gray-400 hover:text-white transition">
+                        <i class="fa-solid fa-list-check mr-1"></i> Meus Agendamentos
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUBABA CLIENTE 1: NOVO AGENDAMENTO -->
+            <div id="client-subview-new" class="space-y-6">
+                <div class="text-center max-w-xl mx-auto">
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Reserve seu Horário</h2>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-1">Escolha o barbeiro, o serviço e o melhor momento para o seu visual.</p>
+                </div>
+
+                <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="glass-panel p-5 sm:p-8 rounded-2xl max-w-2xl mx-auto shadow-2xl space-y-6">
+                    
+                    <!-- Seleção de Barbeiro -->
+                    <div>
+                        <label class="block text-xs font-bold text-gold-400 uppercase tracking-wider mb-3">
+                            1. Escolha o Profissional
+                        </label>
+                        <div class="grid grid-cols-3 gap-3" id="barber-selector-container">
+                            <!-- Renderizado via JS dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Seleção de Serviço -->
+                    <div>
+                        <label class="block text-xs font-bold text-gold-400 uppercase tracking-wider mb-3">
+                            2. Selecione o Serviço
+                        </label>
+                        <div class="space-y-2" id="service-selector-container">
+                            <!-- Renderizado via JS dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Data e Hora -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="booking-date" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                                Data
+                            </label>
+                            <input type="date" id="booking-date" required
+                                class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400">
+                        </div>
+                        <div>
+                            <label for="booking-time" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                                Horário
+                            </label>
+                            <select id="booking-time" required
+                                class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400">
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dados do Cliente -->
+                    <div class="space-y-4 pt-2 border-t border-gray-800">
+                        <div>
+                            <label for="client-name" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                                Seu Nome Completo
+                            </label>
+                            <input type="text" id="client-name" placeholder="Ex: Lucas Silva" required
+                                class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400">
+                        </div>
+                        <div>
+                            <label for="client-phone" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                                Seu WhatsApp / Telefone
+                            </label>
+                            <input type="tel" id="client-phone" placeholder="(11) 99999-9999" required
+                                class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400">
+                        </div>
+                    </div>
+
+                    <!-- Aviso de Política -->
+                    <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-amber-300 text-xs flex items-start gap-3">
+                        <i class="fa-solid fa-circle-info text-base shrink-0 mt-0.5"></i>
+                        <div>
+                            <span class="font-bold block text-sm text-amber-200">Política de Cancelamento</span>
+                            Cancelamentos só podem ser realizados com no mínimo <strong>1 hora e 30 minutos (90 min) de antecedência</strong>.
+                        </div>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-500 text-dark-950 font-extrabold py-4 px-6 rounded-xl shadow-lg shadow-gold-500/20 transition duration-200 transform active:scale-[0.99] flex items-center justify-center gap-2 text-base">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <span>Confirmar Agendamento</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- SUBABA CLIENTE 2: MEUS AGENDAMENTOS -->
+            <div id="client-subview-my" class="space-y-6 hidden max-w-3xl mx-auto">
+                <div class="glass-panel p-4 rounded-xl flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-white text-base">Buscar Meus Agendamentos</h3>
+                        <p class="text-xs text-gray-400">Digite seu WhatsApp para listar suas reservas ativas</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="tel" id="search-client-phone" placeholder="Digite seu telefone" 
+                            class="bg-dark-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-400">
+                        <button onclick="renderClientAppointments()" 
+                            class="bg-gold-500 text-dark-950 px-4 py-2 rounded-lg font-bold text-xs hover:bg-gold-400 transition">
+                            <i class="fa-solid fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="client-appointments-list" class="space-y-3">
+                    <!-- Lista de Agendamentos do Cliente renderizada via JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== ABA 2: PAINEL DOS BARBEIROS ==================== -->
+        <section id="view-barber" class="space-y-6 hidden">
+            
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel p-4 rounded-2xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white">Painel da Equipe</h2>
+                    <p class="text-xs text-gray-400">Agenda diária e notificações de atendimento</p>
+                </div>
+
+                <!-- Filtro de Barbeiro -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-xs font-semibold text-gray-400 uppercase whitespace-nowrap">Profissional:</span>
+                    <select id="filter-barber" onchange="renderBarberAppointments()"
+                        class="bg-dark-800 border border-gray-700 text-gold-400 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none w-full sm:w-auto">
+                        <option value="TODOS">Todos os Barbeiros</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Feed de Notificações Recentes -->
+            <div class="glass-panel p-4 rounded-xl border border-gold-500/20">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-gold-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bell"></i> Feed de Notificações em Tempo Real
+                </h3>
+                <div id="notifications-feed" class="space-y-2 max-h-40 overflow-y-auto text-xs">
+                    <!-- Notificações simuladas -->
+                </div>
+            </div>
+
+            <!-- Lista de Agendamentos para Barbeiros -->
+            <div id="barber-appointments-container" class="space-y-3">
+                <!-- Renderizado via JS -->
+            </div>
+
+        </section>
+
+        <!-- ==================== ABA 3: PAINEL DO GERENTE ==================== -->
+        <section id="view-manager" class="space-y-6 hidden">
+            
+            <!-- Modal / Tela de Login Simples -->
+            <div id="manager-auth-card" class="glass-panel p-6 sm:p-8 rounded-2xl max-w-md mx-auto text-center space-y-4">
+                <div class="w-14 h-14 rounded-full bg-gold-500/10 text-gold-400 mx-auto flex items-center justify-center text-2xl border border-gold-500/20">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-extrabold text-white">Acesso Restrito ao Gerente</h3>
+                    <p class="text-xs text-gray-400 mt-1">Digite a senha administrativa para gerenciar preços, serviços e equipe.</p>
+                </div>
+                <input type="password" id="manager-pass-input" placeholder="Senha (Padrão: 1234)" 
+                    class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-center text-white text-lg font-mono focus:outline-none focus:border-gold-400">
+                <button onclick="authenticateManager()" 
+                    class="w-full bg-gold-500 hover:bg-gold-400 text-dark-950 font-bold py-3 rounded-xl transition">
+                    Acessar Painel Admin
+                </button>
+            </div>
+
+            <!-- Conteúdo do Gerente (Oculto até autenticar) -->
+            <div id="manager-content" class="space-y-8 hidden">
+                
+                <div class="flex items-center justify-between glass-panel p-4 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gold-500/20 text-gold-400 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-sliders"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-extrabold text-white">Painel Administrativo</h2>
+                            <p class="text-xs text-gray-400">Gerencie preços, tabela de serviços e profissionais</p>
+                        </div>
+                    </div>
+                    <button onclick="logoutManager()" class="text-xs bg-dark-800 hover:bg-dark-700 text-gray-300 px-3 py-2 rounded-lg border border-gray-700">
+                        <i class="fa-solid fa-sign-out-alt mr-1"></i> Sair
+                    </button>
+                </div>
+
+                <!-- SEÇÃO 1: GERENCIAMENTO DE SERVIÇOS & PREÇOS -->
+                <div class="glass-panel p-6 rounded-2xl space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                        <div>
+                            <h3 class="text-base font-extrabold text-white">Tabela de Serviços & Valores</h3>
+                            <p class="text-xs text-gray-400">Os valores atualizados aqui refletirão imediatamente para os clientes.</p>
+                        </div>
+                        <button onclick="openNewServiceModal()" 
+                            class="bg-gold-500 hover:bg-gold-400 text-dark-950 text-xs font-extrabold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Adicionar Novo Serviço
+                        </button>
+                    </div>
+
+                    <!-- Tabela de Serviços -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-gray-300">
+                            <thead class="bg-dark-800 text-gold-400 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="p-3 rounded-l-lg">Serviço</th>
+                                    <th class="p-3">Duração</th>
+                                    <th class="p-3">Valor (R$)</th>
+                                    <th class="p-3 text-right rounded-r-lg">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manager-services-tbody" class="divide-y divide-gray-800">
+                                <!-- Renderizado via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SEÇÃO 2: GERENCIAMENTO DA EQUIPE DE BARBEIROS -->
+                <div class="glass-panel p-6 rounded-2xl space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-800 pb-4">
+                        <div>
+                            <h3 class="text-base font-extrabold text-white">Equipe de Barbeiros</h3>
+                            <p class="text-xs text-gray-400">Cadastre ou remova profissionais do catálogo de atendimento.</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <input type="text" id="new-barber-name" placeholder="Nome do Barbeiro" 
+                                class="bg-dark-800 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-gold-400">
+                            <button onclick="addBarber()" 
+                                class="bg-gold-500 hover:bg-gold-400 text-dark-950 font-bold px-4 py-2 rounded-xl text-xs whitespace-nowr
