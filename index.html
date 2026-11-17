@@ -38,15 +38,15 @@
                     <p class="text-xs text-gold-400 uppercase tracking-widest">Barber Shop</p>
                 </div>
             </div>
-            <!-- Acesso Exclusivo no Canto Superior -->
-            <button onclick="openManagerModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2">
+            <!-- Botão da Área do Gerente com onclick direto garantido -->
+            <button type="button" onclick="openManagerModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2 cursor-pointer z-50">
                 <i class="fa-solid fa-user-shield"></i>
                 <span>Área do Gerente</span>
             </button>
         </div>
     </header>
 
-    <!-- Navegação Limpa: Apenas Agendar / Meus Atendimentos -->
+    <!-- Navegação Limpa -->
     <nav class="bg-dark-900 border-b border-gray-800">
         <div class="max-w-4xl mx-auto px-4 flex space-x-2 py-2">
             <button onclick="switchTab('booking')" id="tab-booking" class="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 bg-gold-500 text-black shadow">
@@ -125,7 +125,7 @@
                                 <input type="tel" id="client-phone" placeholder="Ex: (11) 99999-9999" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">E-mail</label>
+                                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">E-mail para Confirmação</label>
                                 <input type="email" id="client-email" placeholder="Ex: lucas@email.com" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
                             </div>
                         </div>
@@ -156,10 +156,10 @@
 
     </main>
 
-    <!-- Modal / Painel do Gerente (Senha 1234 - Compartilhada Jô, Claudinho e Bochecha) -->
+    <!-- Modal / Painel do Gerente (Senha 1234) -->
     <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-dark-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <button type="button" onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white cursor-pointer">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
 
@@ -168,7 +168,7 @@
                 <h3 class="text-lg font-bold text-white mb-1"><i class="fa-solid fa-user-shield text-gold-400 mr-2"></i> Área do Gerente</h3>
                 <p class="text-xs text-gray-400 mb-4">Acesso exclusivo para Jô, Claudinho e Bochecha (Senha: <strong>1234</strong>)</p>
                 <input type="password" id="admin-pass" placeholder="Senha" class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-gold-400">
-                <button onclick="checkAdminPassword()" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3 rounded-xl transition">Entrar no Painel</button>
+                <button type="button" onclick="checkAdminPassword()" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3 rounded-xl transition cursor-pointer">Entrar no Painel</button>
             </div>
 
             <!-- Dashboard View -->
@@ -178,17 +178,17 @@
                         <h3 class="text-lg font-bold text-white">Painel Administrativo</h3>
                         <p class="text-xs text-gray-400">Manutenção de valores e agendamentos futuros.</p>
                     </div>
-                    <button onclick="logoutAdmin()" class="text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
+                    <button type="button" onclick="logoutAdmin()" class="text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer">Sair</button>
                 </div>
 
                 <!-- Manutenção de Valores -->
                 <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-4 space-y-3">
                     <h4 class="font-bold text-sm text-gold-400"><i class="fa-solid fa-tag mr-1"></i> Manutenção de Valores dos Serviços</h4>
                     <div id="services-price-list" class="space-y-3"></div>
-                    <button onclick="saveServicePrices()" class="bg-gold-500 hover:bg-gold-600 text-black font-bold text-xs py-2 px-4 rounded-lg transition">Salvar Novos Preços</button>
+                    <button type="button" onclick="saveServicePrices()" class="bg-gold-500 hover:bg-gold-600 text-black font-bold text-xs py-2 px-4 rounded-lg transition cursor-pointer">Salvar Novos Preços</button>
                 </div>
 
-                <!-- Painel de Agendamentos (Visualização Futura) -->
+                <!-- Painel de Agendamentos -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-calendar-check mr-1 text-gold-400"></i> Agendamentos Futuros</h4>
@@ -277,7 +277,14 @@
             appointments.push(newApp);
             localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
 
-            alert(`Agendamento realizado com sucesso!\n\nNotificação enviada ao profissional ${barber} (Telefone e E-mail registados).`);
+            // Disparo de confirmação por e-mail automática via mailto para o cliente e gerência
+            const emailSubject = encodeURIComponent(`Confirmação de Agendamento - Pellizza's Barber Shop`);
+            const emailBody = encodeURIComponent(`Olá ${clientName},\n\nSeu agendamento foi confirmado com sucesso!\n\nDetalhes:\n- Serviço: ${serviceName}\n- Profissional: ${barber}\n- Data: ${formatDate(date)} às ${time}\n- Valor: R$ ${servicePrice}\n\nAgradecemos a preferência!`);
+            
+            // Abre o cliente de e-mail com a mensagem formatada para envio
+            window.location.href = `mailto:${clientEmail}?subject=${emailSubject}&body=${emailBody}`;
+
+            alert(`Agendamento realizado com sucesso!\n\nUm e-mail de confirmação foi disparado para ${clientEmail} e registado para a gerência/barbeiro ${barber}.`);
 
             document.getElementById('appointmentForm').reset();
             const dateInput = document.getElementById('booking-date');
@@ -326,7 +333,127 @@
                             </div>
                             <p class="text-xs text-gray-300 mt-1"><i class="fa-solid fa-user-tie text-gold-400 mr-1"></i> Profissional: <strong>${app.barber}</strong></p>
                             <p class="text-xs text-gray-400"><i class="fa-solid fa-calendar text-gold-400 mr-1"></i> ${formatDate(app.date)} às ${app.time}</p>
-                            <p class="text-xs text-gray-500 mt-1">Contato: ${app.clientPhone} \vert{}${app.clientEmail}</p>
+                            <p class="text-xs text-gray-500 mt-1">Contato: ${app.clientPhone} | E-mail: ${app.clientEmail}</p>
                         </div>
                         <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
-                            <a href="https://api.whatsapp.com/send?phone=5511999999999&text=Olá,%20gostaria%20de%20confirmar%20meu%20agendamento%20de%20${encodeURIComponent(app.serviceName)}\%20com\%20${encodeURIComponent(app.barber)}%20para%20o%20dia%20${app.date}\%20às\%20${app.time}." target="_blank" class="bg-green-600 hover:
+                            <a href="https://api.whatsapp.com/send?phone=5511999999999&text=Olá,%20gostaria%20de%20confirmar%20meu%20agendamento%20de%20${encodeURIComponent(app.serviceName)}%20com%20${encodeURIComponent(app.barber)}%20para%20o%20dia%20${app.date}%20às%20${app.time}." target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-lg font-semibold flex items-center space-x-1 transition">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
+                            <button type="button" onclick="cancelAppointment(${app.id}, '${app.date}', '${app.time}')" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs px-3 py-2 rounded-lg font-semibold border border-red-500/30 transition cursor-pointer">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatDate(dateStr) {
+            const parts = dateStr.split('-');
+            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+        }
+
+        function openManagerModal() {
+            const modal = document.getElementById('admin-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                const passInput = document.getElementById('admin-pass');
+                if (passInput) passInput.value = '';
+                const loginView = document.getElementById('admin-login-view');
+                const dashView = document.getElementById('admin-dashboard-view');
+                if (loginView) loginView.classList.remove('hidden');
+                if (dashView) dashView.classList.add('hidden');
+            }
+        }
+
+        function toggleAdminModal() {
+            const modal = document.getElementById('admin-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function checkAdminPassword() {
+            const passEl = document.getElementById('admin-pass');
+            if (!passEl) return;
+            const pass = passEl.value;
+            if(pass === '1234') {
+                const loginView = document.getElementById('admin-login-view');
+                const dashView = document.getElementById('admin-dashboard-view');
+                if (loginView) loginView.classList.add('hidden');
+                if (dashView) dashView.classList.remove('hidden');
+                renderAdminDashboard();
+            } else {
+                alert('Senha incorreta! (A senha padrão para Jô, Claudinho e Bochecha é 1234)');
+            }
+        }
+
+        function logoutAdmin() {
+            const loginView = document.getElementById('admin-login-view');
+            const dashView = document.getElementById('admin-dashboard-view');
+            if (loginView) loginView.classList.remove('hidden');
+            if (dashView) dashView.classList.add('hidden');
+            const passEl = document.getElementById('admin-pass');
+            if (passEl) passEl.value = '';
+        }
+
+        function renderAdminDashboard() {
+            const services = getServices();
+            const servicesContainer = document.getElementById('services-price-list');
+            
+            if (servicesContainer) {
+                servicesContainer.innerHTML = services.map((s, index) => `
+                    <div class="flex items-center justify-between bg-dark-900 p-2.5 rounded-lg border border-gray-700 text-xs">
+                        <span class="text-white font-medium">${s.name} (R$)</span>
+                        <input type="number" step="0.50" id="service-price-${index}" value="${s.price.toFixed(2)}" class="bg-dark-800 border border-gray-700 text-gold-400 font-bold p-1.5 rounded w-24 text-center focus:outline-none focus:border-gold-400">
+                    </div>
+                `).join('');
+            }
+
+            renderAdminAppointmentsList();
+        }
+
+        function saveServicePrices() {
+            const services = getServices();
+            services.forEach((s, index) => {
+                const inputEl = document.getElementById(`service-price-${index}`);
+                if (inputEl) {
+                    const val = parseFloat(inputEl.value);
+                    if (!isNaN(val)) {
+                        s.price = val;
+                    }
+                }
+            });
+            localStorage.setItem('pellizzas_services', JSON.stringify(services));
+            alert('Valores dos serviços atualizados com sucesso para toda a barbearia!');
+        }
+
+        function renderAdminAppointmentsList() {
+            const container = document.getElementById('admin-appointments-list');
+            const appointments = getAppointments();
+            const countEl = document.getElementById('total-appointments-count');
+            if (countEl) countEl.innerText = `${appointments.length} agendamentos`;
+
+            if (!container) return;
+
+            if(appointments.length === 0) {
+                container.innerHTML = '<div class="text-center py-6 text-gray-500 text-xs">Nenhum agendamento futuro no sistema.</div>';
+                return;
+            }
+
+            container.innerHTML = appointments.map(app => `
+                <div class="bg-dark-900 border border-gray-700/50 rounded-xl p-3 text-xs space-y-1">
+                    <div class="flex justify-between items-center font-bold text-white">
+                        <span><i class="fa-solid fa-user text-gold-400 mr-1"></i> ${app.clientName}</span>
+                        <span class="text-gold-400">R$ ${app.servicePrice}</span>
+                    </div>
+                    <p class="text-gray-300">Serviço: <strong>${app.serviceName}</strong> | Profissional: <strong class="text-gold-400">${app.barber}</strong></p>
+                    <p class="text-gray-400">Data e Horário: <strong>${formatDate(app.date)} às ${app.time}</strong></p>
+                    <p class="text-gray-500">Contato: Tel: ${app.clientPhone} | E-mail: ${app.clientEmail}</p>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
