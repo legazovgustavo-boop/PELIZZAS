@@ -1,326 +1,341 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pellizza's Barber Shop - Gestão & Agendamento</title>
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Font Awesome Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script>
-tailwind.config = {
-theme: {
-extend: {
-fontFamily: {
-sans: ['Plus Jakarta Sans', 'sans-serif']
-},
-colors: {
-gold: {
-400: '#D4AF37',
-500: '#C5A028',
-600: '#A38118',
-},
-dark: {
-800: '#121212',
-900: '#0A0A0A',
-950: '#050505'
-}
-}
-}
-}
-}
-</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pellizza's Barber Shop - Sistema Completo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        gold: { 400: '#D4AF37', 500: '#C5A028', 600: '#A38118' },
+                        dark: { 800: '#121212', 900: '#0A0A0A', 950: '#050505' }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-dark-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-gold-500 selection:text-black">
-<!-- Header / Navbar -->
-<header class="bg-dark-900 border-b border-gray-800 sticky top-0 z-50 shadow-lg">
-<div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-<div class="flex items-center space-x-3">
-<div class="bg-gold-500 text-black p-2.5 rounded-xl font-bold text-xl shadow-md">
-<i class="fa-solid fa-scissors"></i>
-</div>
-<div>
-<h1 class="font-bold text-lg tracking-wider text-white">PELLIZZA'S</h1>
-<p class="text-xs text-gold-400 uppercase tracking-widest">Barber Shop</p>
-</div>
-</div>
-<!-- Gerente / Admin Toggle -->
-<button onclick="toggleAdminModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gray-300 hover:text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2">
-<i class="fa-solid fa-lock text-gold-400"></i>
-<span class="hidden sm:inline">Painel Gerente</span>
-</button>
-</div>
-</header>
-<!-- Main Container -->
-<main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6 pb-24">
-<!-- Tabs Navigation -->
-<div class="grid grid-cols-3 gap-2 bg-dark-900 p-1.5 rounded-2xl border border-gray-800 mb-6 shadow-inner">
-<button onclick="switchTab('booking')" id="tab-booking" class="py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 bg-gold-500 text-black shadow">
-<i class="fa-solid fa-calendar-days"></i>
-<span>Agendar</span>
-</button>
-<button onclick="switchTab('my-appointments')" id="tab-my-appointments" class="py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 text-gray-400 hover:text-white">
-<i class="fa-solid fa-clock-rotate-left"></i>
-<span>Meus Agendamentos</span>
-</button>
-<button onclick="switchTab('barbers')" id="tab-barbers" class="py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 text-gray-400 hover:text-white">
-<i class="fa-solid fa-users"></i>
-<span>Barbeiros</span>
-</button>
-</div>
-<!-- TAB 1: AGENDAR -->
-<section id="content-booking" class="space-y-6">
-<div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
-<h2 class="text-xl font-bold text-white mb-1">Novo Agendamento</h2>
-<p class="text-xs text-gray-400 mb-6">Escolha o serviço, barbeiro, data e horário de sua preferência.</p>
-<form id="appointmentForm" onsubmit="handleBooking(event)" class="space-y-5">
-<!-- Escolher Serviço -->
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Serviço Desejado</label>
-<select id="booking-service" required onchange="updateServicePrice()" class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
-<option value="" disabled selected>Selecione um serviço</option>
-<option value="Corte Cabelo|40.00">Corte de Cabelo - R$ 40,00</option>
-<option value="Barba Completa|30.00">Barba Completa - R$ 30,00</option>
-<option value="Corte + Barba|65.00">Corte + Barba (Combo) - R$ 65,00</option>
-<option value="Pézinho / Acabamento|20.00">Pézinho / Acabamento - R$ 20,00</option>
-</select>
-</div>
-<!-- Escolher Barbeiro -->
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Profissional</label>
-<select id="booking-barber" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
-<option value="" disabled selected>Selecione o Barbeiro</option>
-<option value="Jô">Jô</option>
-<option value="Claudinho">Claudinho</option>
-<option value="Bochecha">Bochecha</option>
-</select>
-</div>
-<!-- Data e Horário -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Data</label>
-<input type="date" id="booking-date" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
-</div>
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Horário</label>
-<select id="booking-time" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
-<option value="" disabled selected>Selecione um horário</option>
-<option value="09:00">09:00</option>
-<option value="10:00">10:00</option>
-<option value="11:00">11:00</option>
-<option value="13:00">13:00</option>
-<option value="14:00">14:00</option>
-<option value="15:00">15:00</option>
-<option value="16:00">16:00</option>
-<option value="17:00">17:00</option>
-<option value="18:00">18:00</option>
-<option value="19:00">19:00</option>
-</select>
-</div>
-</div>
-<!-- Dados do Cliente -->
-<div class="border-t border-gray-800 pt-5 space-y-4">
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Seu Nome Completo</label>
-<input type="text" id="client-name" placeholder="Ex: Lucas Silva" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
-</div>
-<div>
-<label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">WhatsApp / Telefone</label>
-<input type="tel" id="client-phone" placeholder="Ex: (11) 99999-9999" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
-</div>
-</div>
-<button type="submit" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 text-base">
-<i class="fa-solid fa-check"></i>
-<span>Confirmar Agendamento</span>
-</button>
-</form>
-</div>
-</section>
-<!-- TAB 2: MEUS AGENDAMENTOS -->
-<section id="content-my-appointments" class="hidden space-y-6">
-<div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
-<h2 class="text-xl font-bold text-white mb-1">Agendamentos Realizados</h2>
-<p class="text-xs text-gray-400 mb-6">Lista de todos os horários marcados salvos no dispositivo.</p>
-<div id="appointments-list" class="space-y-4">
-<!-- Dinâmico via JS -->
-</div>
-</div>
-</section>
-<!-- TAB 3: BARBEIROS -->
-<section id="content-barbers" class="hidden space-y-6">
-<div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
-<h2 class="text-xl font-bold text-white mb-1">Nossa Equipe</h2>
-<p class="text-xs text-gray-400 mb-6">Profissionais qualificados prontos para atender você com excelência.</p>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-<!-- Jô -->
-<div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
-<div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">
-J
-</div>
-<h3 class="font-bold text-lg text-white">Jô</h3>
-<p class="text-xs text-gold-400 mb-3">Especialista em Degradê & Barba</p>
-<p class="text-xs text-gray-400">Anos de experiência no mercado clássico e moderno.</p>
-</div>
-<!-- Claudinho -->
-<div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
-<div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">
-C
-</div>
-<h3 class="font-bold text-lg text-white">Claudinho</h3>
-<p class="text-xs text-gold-400 mb-3">Cortes Modernos & Estilos</p>
-<p class="text-xs text-gray-400">Atendimento personalizado e focado nas novas tendências.</p>
-</div>
-<!-- Bochecha -->
-<div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
-<div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">
-B
-</div>
-<h3 class="font-bold text-lg text-white">Bochecha</h3>
-<p class="text-xs text-gold-400 mb-3">Barba Tradicional & Navalha</p>
-<p class="text-xs text-gray-400">Mestre em acabamento perfeito com toalha quente.</p>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Modal do Gerente (Senha 1234) -->
-<div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-<div class="bg-dark-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-<button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-<i class="fa-solid fa-xmark text-lg"></i>
-</button>
-<div id="admin-login-view">
-<h3 class="text-lg font-bold text-white mb-1">Painel Gerente</h3>
-<p class="text-xs text-gray-400 mb-4">Digite a senha de acesso (Padrão: 1234)</p>
-<input type="password" id="admin-pass" placeholder="Senha" class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-gold-400">
-<button onclick="checkAdminPassword()" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3 rounded-xl transition">Entrar</button>
-</div>
-<div id="admin-dashboard-view" class="hidden space-y-4">
-<div class="flex justify-between items-center border-b border-gray-800 pb-3">
-<h3 class="text-lg font-bold text-white">Todos os Agendamentos</h3>
-<button onclick="clearAllAppointments()" class="text-xs bg-red-600/20 text-red-400 hover:bg-red-600/30 px-3 py-1.5 rounded-lg border border-red-500/30 transition">Limpar Tudo</button>
-</div>
-<div id="admin-appointments-list" class="max-h-80 overflow-y-auto space-y-3 pr-1">
-<!-- Preenchido via JS -->
-</div>
-</div>
-</div>
-</div>
-<!-- Script Principal da Aplicação -->
-<script>
-// Configurar data mínima para hoje
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('booking-date').min = today;
-// Gestão de Abas
-function switchTab(tabId) {
-['booking', 'my-appointments', 'barbers'].forEach(t => {
-document.getElementById('content-' + t).classList.add('hidden');
-document.getElementById('tab-' + t).className = "py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 text-gray-400 hover:text-white";
-});
-document.getElementById('content-' + tabId).classList.remove('hidden');
-document.getElementById('tab-' + tabId).className = "py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 bg-gold-500 text-black shadow";
-if(tabId === 'my-appointments') {
-renderAppointments();
-}
-}
-// Carregar Agendamentos do LocalStorage
-function getAppointments() {
-const data = localStorage.getItem('pellizzas_appointments');
-return data ? JSON.parse(data) : [];
-}
-// Salvar Agendamento
-function handleBooking(e) {
-e.preventDefault();
-const serviceRaw = document.getElementById('booking-service').value.split('|');
-const serviceName = serviceRaw[0];
-const servicePrice = serviceRaw[1];
-const barber = document.getElementById('booking-barber').value;
-const date = document.getElementById('booking-date').value;
-const time = document.getElementById('booking-time').value;
-const clientName = document.getElementById('client-name').value;
-const clientPhone = document.getElementById('client-phone').value;
-const newAppointment = {
-id: Date.now(),
-serviceName,
-servicePrice,
-barber,
-date,
-time,
-clientName,
-clientPhone
-};
-const appointments = getAppointments();
-appointments.push(newAppointment);
-localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
-// Feedback visual e redirecionamento para aba de agendamentos
-alert('Agendamento realizado com sucesso!');
-document.getElementById('appointmentForm').reset();
-document.getElementById('booking-date').min = today;
-switchTab('my-appointments');
-}
-// Renderizar Agendamentos do Cliente
-function renderAppointments() {
-const listContainer = document.getElementById('appointments-list');
-const appointments = getAppointments();
-if (appointments.length === 0) {
-listContainer.innerHTML = <div class="text-center py-8 text-gray-500 text-sm">Nenhum agendamento encontrado.</div>;
-return;
-}
-listContainer.innerHTML = appointments.map(app => <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"> <div> <div class="flex items-center space-x-2"> <span class="text-gold-400 font-bold text-sm">${app.serviceName}</span> <span class="text-xs bg-dark-900 px-2 py-0.5 rounded text-gray-300 border border-gray-700">R$ ${app.servicePrice}</span> </div> <p class="text-xs text-gray-300 mt-1"><i class="fa-solid fa-user-tie text-gold-400 mr-1"></i> Barbeiro: <strong>${app.barber}</strong></p> <p class="text-xs text-gray-400"><i class="fa-solid fa-calendar text-gold-400 mr-1"></i> ${formatDate(app.date)} às ${app.time}</p> </div> <div class="flex items-center space-x-2 w-full sm:w-auto justify-end"> <a href="https://api.whatsapp.com/send?phone=5511999999999&text=Olá,%20gostaria%20de%20confirmar%20meu%20agendamento%20de%20${encodeURIComponent(app.serviceName)}%20com%20${encodeURIComponent(app.barber)}%20para%20o%20dia%20${app.date}%20às%20${app.time}." target="_blank" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-lg font-semibold flex items-center space-x-1 transition"> <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span> </a> <button onclick="cancelAppointment(${app.id})" class="bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs px-3 py-2 rounded-lg font-semibold border border-red-500/30 transition"> Cancelar </button> </div> </div>).join('');
-}
-// Cancelar Agendamento
-function cancelAppointment(id) {
-if(confirm('Deseja realmente cancelar este agendamento?')) {
-let appointments = getAppointments();
-appointments = appointments.filter(app => app.id !== id);
-localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
-renderAppointments();
-}
-}
-// Formatar Data (YYYY-MM-DD para DD/MM/YYYY)
-function formatDate(dateStr) {
-const parts = dateStr.split('-');
-if(parts.length === 3) {
-return ${parts[2]}/${parts[1]}/${parts[0]};
-}
-return dateStr;
-}
-// Modal do Gerente
-function toggleAdminModal() {
-const modal = document.getElementById('admin-modal');
-modal.classList.toggle('hidden');
-document.getElementById('admin-pass').value = '';
-document.getElementById('admin-login-view').classList.remove('hidden');
-document.getElementById('admin-dashboard-view').classList.add('hidden');
-}
-function checkAdminPassword() {
-const pass = document.getElementById('admin-pass').value;
-if(pass === '1234') {
-document.getElementById('admin-login-view').classList.add('hidden');
-document.getElementById('admin-dashboard-view').classList.remove('hidden');
-renderAdminAppointments();
-} else {
-alert('Senha incorreta! (Tente 1234)');
-}
-}
-function renderAdminAppointments() {
-const container = document.getElementById('admin-appointments-list');
-const appointments = getAppointments();
-if(appointments.length === 0) {
-container.innerHTML = <div class="text-center py-6 text-gray-500 text-xs">Nenhum agendamento cadastrado no sistema.</div>;
-return;
-}
-container.innerHTML = appointments.map(app => <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-3 text-xs space-y-1"> <div class="flex justify-between items-center font-bold text-white"> <span>${app.clientName}</span> <span class="text-gold-400">R$ ${app.servicePrice}</span> </div> <p class="text-gray-300">Serviço: ${app.serviceName} | Barbeiro: ${app.barber}</p> <p class="text-gray-400">Data/Hora: ${formatDate(app.date)} às ${app.time}</p> <p class="text-gray-500">Tel: ${app.clientPhone}</p> </div>).join('');
-}
-function clearAllAppointments() {
-if(confirm('Tem certeza que deseja apagar todos os agendamentos do sistema?')) {
-localStorage.removeItem('pellizzas_appointments');
-renderAdminAppointments();
-}
-}
-</script>
-</body>
-</html>
+<body class="bg-dark-950 text-gray-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-dark-900 border-b border-gray-800 sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gold-500 text-black p-2.5 rounded-xl font-bold text-xl shadow-md">
+                    <i class="fa-solid fa-scissors"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wider text-white">PELLIZZA'S</h1>
+                    <p class="text-xs text-gold-400 uppercase tracking-widest">Barber Shop</p>
+                </div>
+            </div>
+            <button onclick="openManagerModal()" class="text-xs bg-dark-800 hover:bg-gray-800 text-gold-400 border border-gray-700 px-3 py-2 rounded-xl transition flex items-center space-x-2">
+                <i class="fa-solid fa-lock"></i>
+                <span>Área do Gerente</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="bg-dark-900 border-b border-gray-800">
+        <div class="max-w-4xl mx-auto px-4 flex space-x-2 py-2 overflow-x-auto">
+            <button onclick="switchTab('booking')" id="tab-booking" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 bg-gold-500 text-black shadow">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Agendar Horário</span>
+            </button>
+            <button onclick="switchTab('my-appointments')" id="tab-my-appointments" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Meus Agendamentos</span>
+            </button>
+            <button onclick="switchTab('barbers')" id="tab-barbers" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-users"></i>
+                <span>Nossa Equipe</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6 pb-24">
+
+        <!-- TAB 1: AGENDAR -->
+        <section id="content-booking" class="space-y-6">
+            <div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-1">Novo Agendamento</h2>
+                <p class="text-xs text-gray-400 mb-6">Preencha os dados abaixo para garantir seu atendimento.</p>
+                
+                <form id="appointmentForm" onsubmit="handleBooking(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Serviço Desejado</label>
+                        <select id="booking-service" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
+                            <option value="" disabled selected>Selecione um serviço</option>
+                            <!-- Dinâmico gerido pelo gerente -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Profissional</label>
+                        <select id="booking-barber" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
+                            <option value="" disabled selected>Selecione o Barbeiro</option>
+                            <option value="Jô">Jô</option>
+                            <option value="Claudinho">Claudinho</option>
+                            <option value="Bochecha">Bochecha</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Data</label>
+                            <input type="date" id="booking-date" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Horário</label>
+                            <select id="booking-time" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-gold-400 transition">
+                                <option value="" disabled selected>Selecione um horário</option>
+                                <option value="09:00">09:00</option>
+                                <option value="10:00">10:00</option>
+                                <option value="11:00">11:00</option>
+                                <option value="13:00">13:00</option>
+                                <option value="14:00">14:00</option>
+                                <option value="15:00">15:00</option>
+                                <option value="16:00">16:00</option>
+                                <option value="17:00">17:00</option>
+                                <option value="18:00">18:00</option>
+                                <option value="19:00">19:00</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-800 pt-5 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Seu Nome Completo</label>
+                            <input type="text" id="client-name" placeholder="Ex: Lucas Silva" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">Seu WhatsApp / Telefone</label>
+                            <input type="tel" id="client-phone" placeholder="Ex: (11) 99999-9999" required class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition">
+                        </div>
+                    </div>
+
+                    <!-- Política de Cancelamento Aviso -->
+                    <div class="bg-dark-800/60 border border-gray-800 rounded-xl p-3 text-xs text-gray-400">
+                        <i class="fa-solid fa-triangle-exclamation text-gold-400 mr-1"></i>
+                        <strong>Política de Cancelamento:</strong> O cancelamento só é permitido com até <strong>1 hora de antecedência</strong> do horário agendado.
+                    </div>
+
+                    <button type="submit" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3.5 px-4 rounded-xl shadow-lg transition flex items-center justify-center space-x-2 text-base">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Confirmar Agendamento</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 2: MEUS AGENDAMENTOS -->
+        <section id="content-my-appointments" class="hidden space-y-6">
+            <div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-1">Meus Agendamentos</h2>
+                <p class="text-xs text-gray-400 mb-6">Acompanhe seus horários marcados ou cancele (respeitando o limite de 1h).</p>
+                <div id="appointments-list" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BARBEIROS -->
+        <section id="content-barbers" class="hidden space-y-6">
+            <div class="bg-dark-900 border border-gray-800 rounded-2xl p-5 sm:p-8 shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-1">Nossa Equipe</h2>
+                <p class="text-xs text-gray-400 mb-6">Profissionais especializados prontos para o seu visual.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
+                        <div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">J</div>
+                        <h3 class="font-bold text-lg text-white">Jô</h3>
+                        <p class="text-xs text-gold-400 mb-2">Degradê & Barba</p>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
+                        <div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">C</div>
+                        <h3 class="font-bold text-lg text-white">Claudinho</h3>
+                        <p class="text-xs text-gold-400 mb-2">Cortes Clássicos</p>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700/60 rounded-2xl p-5 text-center flex flex-col items-center">
+                        <div class="w-20 h-20 bg-gold-500/10 border-2 border-gold-500 text-gold-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4">B</div>
+                        <h3 class="font-bold text-lg text-white">Bochecha</h3>
+                        <p class="text-xs text-gold-400 mb-2">Estilo & Navalha</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal / Painel do Gerente (Senha 1234) -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Login View -->
+            <div id="admin-login-view">
+                <h3 class="text-lg font-bold text-white mb-1">Área do Gerente / Gestão</h3>
+                <p class="text-xs text-gray-400 mb-4">Digite a senha administrativa (Senha padrão: 1234)</p>
+                <input type="password" id="admin-pass" placeholder="Senha" class="w-full bg-dark-800 border border-gray-700 rounded-xl p-3 text-white mb-4 focus:outline-none focus:border-gold-400">
+                <button onclick="checkAdminPassword()" class="w-full bg-gold-500 hover:bg-gold-600 text-black font-bold py-3 rounded-xl transition">Entrar no Painel</button>
+            </div>
+
+            <!-- Dashboard View -->
+            <div id="admin-dashboard-view" class="hidden space-y-6">
+                <div class="border-b border-gray-800 pb-3 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Painel Administrativo</h3>
+                        <p class="text-xs text-gray-400">Gerencie valores de serviços e visualize a agenda futura.</p>
+                    </div>
+                    <button onclick="logoutAdmin()" class="text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30">Sair</button>
+                </div>
+
+                <!-- Gestão de Preços dos Serviços -->
+                <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-4 space-y-3">
+                    <h4 class="font-bold text-sm text-gold-400"><i class="fa-solid fa-tag mr-1"></i> Alterar Valores dos Serviços</h4>
+                    <div id="services-price-list" class="space-y-3">
+                        <!-- Gerado dinamicamente -->
+                    </div>
+                    <button onclick="saveServicePrices()" class="bg-gold-500 hover:bg-gold-600 text-black font-bold text-xs py-2 px-4 rounded-lg transition">Salvar Novos Preços</button>
+                </div>
+
+                <!-- Painel de Visualização de Agendamentos Futuros -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-calendar-check mr-1 text-gold-400"></i> Agendamentos Futuros (Visualização)</h4>
+                        <span id="total-appointments-count" class="text-xs bg-dark-800 px-2.5 py-1 rounded-full text-gold-400 border border-gray-700">0 agendamentos</span>
+                    </div>
+                    <div id="admin-appointments-list" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Principal -->
+    <script>
+        // Serviços padrão iniciais do sistema
+        const defaultServices = [
+            { id: 'corte', name: 'Corte de Cabelo', price: 40.00 },
+            { id: 'barba', name: 'Barba Completa', price: 30.00 },
+            { id: 'combo', name: 'Corte + Barba (Combo)', price: 65.00 },
+            { id: 'pezinho', name: 'Pézinho / Acabamento', price: 20.00 }
+        ];
+
+        function getServices() {
+            const data = localStorage.getItem('pellizzas_services');
+            return data ? JSON.parse(data) : defaultServices;
+        }
+
+        function renderServiceOptions() {
+            const services = getServices();
+            const select = document.getElementById('booking-service');
+            select.innerHTML = '<option value="" disabled selected>Selecione um serviço</option>' + 
+                services.map(s => `<option value="${s.name}|${s.price.toFixed(2)}">${s.name} - R$ ${s.price.toFixed(2).replace('.', ',')}</option>`).join('');
+        }
+
+        // Data mínima para hoje
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('booking-date').min = todayStr;
+
+        function switchTab(tabId) {
+            ['booking', 'my-appointments', 'barbers'].forEach(t => {
+                document.getElementById('content-' + t).classList.add('hidden');
+                document.getElementById('tab-' + t).className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 text-gray-400 hover:text-white";
+            });
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+            document.getElementById('tab-' + tabId).className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center space-x-2 bg-gold-500 text-black shadow";
+            if(tabId === 'my-appointments') {
+                renderAppointments();
+            }
+        }
+
+        function getAppointments() {
+            const data = localStorage.getItem('pellizzas_appointments');
+            return data ? JSON.parse(data) : [];
+        }
+
+        // Realizar Agendamento e disparar notificação simulada ao gestor/barbeiro
+        function handleBooking(e) {
+            e.preventDefault();
+            const serviceSelect = document.getElementById('booking-service').value.split('|');
+            const serviceName = serviceSelect[0];
+            const servicePrice = serviceSelect[1];
+            const barber = document.getElementById('booking-barber').value;
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            const clientName = document.getElementById('client-name').value;
+            const clientPhone = document.getElementById('client-phone').value;
+
+            const newApp = {
+                id: Date.now(),
+                serviceName,
+                servicePrice,
+                barber,
+                date,
+                time,
+                clientName,
+                clientPhone,
+                createdAt: new Date().toISOString()
+            };
+
+            const appointments = getAppointments();
+            appointments.push(newApp);
+            localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
+
+            // Simulação de notificação ao barbeiro/gestor (por telefone/WhatsApp ou email)
+            console.log(`[NOTIFICAÇÃO ENVIADA AO BARBEIRO ${barber}]: Novo agendamento de ${clientName} para ${date} às ${time}.`);
+            alert(`Agendamento realizado com sucesso!\n\nUma notificação foi enviada ao barbeiro ${barber}.`);
+
+            document.getElementById('appointmentForm').reset();
+            document.getElementById('booking-date').min = todayStr;
+            switchTab('my-appointments');
+        }
+
+        // Regra de Cancelamento (Bloqueio se faltar menos de 1 hora)
+        function cancelAppointment(id, dateStr, timeStr) {
+            // Montar data e hora do compromisso
+            const appointmentDateTime = new Date(`${dateStr}T${timeStr}:00`);
+            const now = new Date();
+
+            // Diferença em milissegundos
+            const diffMs = appointmentDateTime - now;
+            const diffHours = diffMs / (1000 * 60 * 60);
+
+            if (diffHours < 1) {
+                alert('Aviso: O cancelamento não é permitido com menos de 1 hora de antecedência do horário agendado.');
+                return;
+            }
+
+            if(confirm('Deseja realmente cancelar este agendamento?')) {
+                let appointments = getAppointments();
+                appointments = appointments.filter(app => app.id !== id);
+                localStorage.setItem('pellizzas_appointments', JSON.stringify(appointments));
+                renderAppointments();
+                alert('Agendamento cancelado com sucesso.');
+            }
+        }
+
+        function renderAppointments() {
+            const listContainer = document.getElementById('appointments-list');
+            const appointments = getAppointments();
+
+            if (appointments.length === 0) {
+                listContainer.innerHTML = '<div class="text-center py-8 text-gray-500 text-sm">Nenhum agendamento encontrado.</div>';
+                return;
+            }
+
+            listContainer.innerHTML = appointments.map(app => {
+                return `
+      
