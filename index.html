@@ -189,15 +189,41 @@
                 </div>
 
                 <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <button id="adm-tab-agenda" type="button" class="flex-1 py-2 rounded-lg text-xs font-semibold cursor-pointer">Agenda</button>
+                        <button id="adm-tab-done" type="button" class="flex-1 py-2 rounded-lg text-xs font-semibold cursor-pointer">Atendidos</button>
+                        <button id="adm-tab-canceled" type="button" class="flex-1 py-2 rounded-lg text-xs font-semibold cursor-pointer">Cancelados</button>
+                    </div>
+
                     <div class="flex flex-wrap gap-2 justify-between items-center">
-                        <h4 class="font-bold text-sm text-white"><i class="fa-solid fa-calendar-check mr-1 text-gold-400"></i> Agendamentos de hoje em diante</h4>
-                        <div class="flex items-center gap-2">
+                        <div id="admin-month-wrap" class="hidden">
+                            <input type="month" id="admin-month" class="text-xs bg-dark-800 border border-gray-700 rounded-lg p-1.5 text-white">
+                        </div>
+                        <div class="flex items-center gap-2 ml-auto">
                             <select id="admin-barber-filter" class="text-xs bg-dark-800 border border-gray-700 rounded-lg p-1.5 text-white"></select>
                             <button id="btn-refresh-admin" type="button" class="text-xs bg-dark-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-gold-400 cursor-pointer" aria-label="Atualizar"><i class="fa-solid fa-rotate"></i></button>
-                            <span id="total-appointments-count" class="text-xs bg-dark-800 px-2.5 py-1 rounded-full text-gold-400 border border-gray-700">0 agendamentos</span>
+                            <span id="total-appointments-count" class="text-xs bg-dark-800 px-2.5 py-1 rounded-full text-gold-400 border border-gray-700">0</span>
                         </div>
                     </div>
-                    <div id="admin-appointments-list" class="space-y-3 max-h-80 overflow-y-auto pr-1"></div>
+
+                    <div id="admin-summary" class="hidden">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-3">
+                                <p class="text-[11px] text-gray-400">Atendidos</p>
+                                <p id="sum-done" class="text-lg font-bold text-white">0</p>
+                            </div>
+                            <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-3">
+                                <p class="text-[11px] text-gray-400">Faturado</p>
+                                <p id="sum-money" class="text-lg font-bold text-gold-400">R$ 0,00</p>
+                            </div>
+                            <div class="bg-dark-800 border border-gray-700/50 rounded-xl p-3">
+                                <p class="text-[11px] text-gray-400">Cancelados</p>
+                                <p id="sum-canceled" class="text-lg font-bold text-red-400">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin-appointments-list" class="space-y-3 max-h-96 overflow-y-auto pr-1"></div>
                 </div>
             </div>
         </div>
@@ -240,7 +266,7 @@
     <!-- Relatório de problemas: script comum (funciona mesmo se o código principal falhar) -->
     <script>
         window.PelLog = (function () {
-            var VERSION = "1.1.0";
+            var VERSION = "1.2.0";
             // Número que recebe os relatórios (55 + DDD + número).
             var SUPPORT_WHATSAPP = "5511978989942";
             var SHOP_LABEL = "Pellizza's Barber Shop";
@@ -353,7 +379,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import {
             getFirestore, doc, getDoc, getDocs, setDoc, collection, query, where, orderBy, limit,
-            writeBatch, Timestamp, serverTimestamp
+            writeBatch, updateDoc, deleteField, Timestamp, serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -553,6 +579,7 @@
                 barberId: barber.id, barberName: barber.name,
                 date, time, startAt: Timestamp.fromDate(start),
                 clientName, clientPhone, consent: true,
+                status: "agendado",
                 createdAt: serverTimestamp()
             };
             const btn = $("btn-submit-booking");
@@ -613,32 +640,88 @@
             return startAt.toDate().getTime() - Date.now() > SHOP.minCancelMinutes * 60000;
         }
 
+        const statusOf = (a) => a.status || "agendado";
+
+        function fmtDateTime(ts) {
+            if (!ts || typeof ts.toDate !== "function") return "";
+            const d = ts.toDate();
+            return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        const BTN_GREEN = "text-xs bg-green-600/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/30 cursor-pointer";
+        const BTN_RED = "text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer";
+        const BTN_GRAY = "text-xs bg-dark-900 text-gray-300 px-3 py-1.5 rounded-lg border border-gray-700 cursor-pointer";
+
         function appointmentCard(token, a, opts = {}) {
-            const cancellable = opts.admin || canCancel(a.startAt);
+            const status = statusOf(a);
             const past = a.startAt.toDate() < new Date();
+            const badge = status === "atendido"
+                ? el("span", { class: "text-[11px] px-2 py-0.5 rounded-full bg-green-600/20 text-green-400 border border-green-500/30", text: "Atendido" })
+                : status === "cancelado"
+                    ? el("span", { class: "text-[11px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30", text: "Cancelado" })
+                    : null;
+
+            let footer;
+            if (status === "cancelado") {
+                const when = fmtDateTime(a.canceledAt);
+                footer = opts.admin
+                    ? el("p", { class: "text-xs text-red-300", text: `Cancelado pelo ${a.canceledBy === "barbeiro" ? "barbeiro" : "cliente"}${when ? " em " + when : ""}.` })
+                    : el("p", { class: "text-xs text-gray-500", text: "Este agendamento foi cancelado." });
+            } else if (status === "atendido") {
+                const when = fmtDateTime(a.attendedAt);
+                footer = el("div", { class: "space-y-2" },
+                    el("p", { class: "text-xs text-green-300", text: `Atendimento concluído${when ? " em " + when : ""}.` }),
+                    opts.admin ? el("button", { type: "button", class: BTN_GRAY, text: "Desfazer", onclick: () => setAttended(token, false) }) : null
+                );
+            } else if (opts.admin) {
+                footer = el("div", { class: "space-y-2" },
+                    past ? el("p", { class: "text-xs text-yellow-300", text: "Horário já passou: marque como atendido ou cancele." }) : null,
+                    el("div", { class: "flex flex-wrap gap-2" },
+                        el("button", { type: "button", class: BTN_GREEN, text: "Marcar como atendido", onclick: () => setAttended(token, true) }),
+                        el("button", { type: "button", class: BTN_RED, text: "Cancelar", onclick: () => cancelAppointment(token, a, opts) })
+                    )
+                );
+            } else if (past) {
+                footer = el("p", { class: "text-xs text-gray-500", text: "Horário já passou." });
+            } else if (canCancel(a.startAt)) {
+                footer = el("button", {
+                    type: "button", class: BTN_RED + " mt-1", text: "Cancelar agendamento",
+                    onclick: () => cancelAppointment(token, a, opts)
+                });
+            } else {
+                footer = el("p", { class: "text-xs text-gray-500", text: "Prazo de cancelamento encerrado (menos de 1 hora)." });
+            }
+
             return el("div", { class: "bg-dark-800 border border-gray-700/60 rounded-xl p-4 text-sm space-y-1" },
                 el("div", { class: "flex justify-between gap-2" },
                     el("strong", { class: "text-white", text: `${fmtDate(a.date)} às ${a.time}` }),
                     el("span", { class: "text-gold-400", text: brl(a.servicePrice) })
                 ),
+                badge,
                 el("p", { class: "text-gray-300", text: `${a.serviceName} com ${a.barberName}` }),
                 opts.admin ? el("p", { class: "text-gray-300", text: `${a.clientName} — ${a.clientPhone}` }) : null,
-                opts.admin ? el("a", {
+                opts.admin && status !== "cancelado" ? el("a", {
                     class: "text-xs text-green-400 underline",
                     target: "_blank", rel: "noopener",
                     href: `https://wa.me/55${a.clientPhone.replace(/\D/g, "").replace(/^55/, "")}`,
                     text: "Chamar no WhatsApp"
                 }) : null,
-                past ? el("p", { class: "text-xs text-gray-500", text: "Horário já passou." }) :
-                    cancellable
-                        ? el("button", {
-                            type: "button",
-                            class: "mt-2 text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer",
-                            text: "Cancelar agendamento",
-                            onclick: () => cancelAppointment(token, a, opts)
-                        })
-                        : el("p", { class: "text-xs text-gray-500 mt-2", text: "Prazo de cancelamento encerrado (menos de 1 hora)." })
+                footer
             );
+        }
+
+        async function setAttended(token, attended) {
+            try {
+                await updateDoc(doc(db, "appointments", token), attended
+                    ? { status: "atendido", attendedAt: serverTimestamp() }
+                    : { status: "agendado", attendedAt: deleteField() });
+            } catch (e) {
+                logError("marcar atendimento", e);
+                return notify("Não foi possível salvar agora. Tente de novo.", "error");
+            }
+            logInfo(attended ? "marcado como atendido" : "atendimento desfeito");
+            notify(attended ? "Marcado como atendido." : "Atendimento desfeito.", "ok");
+            loadAdminAppointments();
         }
 
         async function renderAppointments() {
@@ -665,8 +748,13 @@
             if (!opts.admin && !canCancel(a.startAt)) return notify("O prazo de cancelamento já passou.", "error");
             if (!confirm("Deseja mesmo cancelar este agendamento?")) return;
             try {
+                // O agendamento não é apagado: fica guardado como "cancelado" (histórico). O horário volta a ficar livre.
                 const batch = writeBatch(db);
-                batch.delete(doc(db, "appointments", token));
+                batch.update(doc(db, "appointments", token), {
+                    status: "cancelado",
+                    canceledAt: serverTimestamp(),
+                    canceledBy: opts.admin ? "barbeiro" : "cliente"
+                });
                 batch.delete(doc(db, "slots", slotIdOf(a.date, a.time, a.barberId)));
                 await batch.commit();
             } catch (e) {
@@ -676,7 +764,6 @@
                     : "Não foi possível cancelar agora. Tente de novo.", "error");
                 return;
             }
-            removeMyToken(token);
             logInfo("agendamento cancelado");
             notify("Agendamento cancelado.", "ok");
             if (opts.admin) loadAdminAppointments(); else renderAppointments();
@@ -770,20 +857,58 @@
             notify("Preços atualizados.", "ok");
         }
 
+        const ADM_TAB_ON = "flex-1 py-2 rounded-lg text-xs font-semibold cursor-pointer bg-gold-500 text-black";
+        const ADM_TAB_OFF = "flex-1 py-2 rounded-lg text-xs font-semibold cursor-pointer bg-dark-800 text-gray-300 border border-gray-700";
+        let adminTab = "agenda"; // agenda | atendido | cancelado
+
+        function switchAdminTab(tab, load = true) {
+            adminTab = tab;
+            $("adm-tab-agenda").className = tab === "agenda" ? ADM_TAB_ON : ADM_TAB_OFF;
+            $("adm-tab-done").className = tab === "atendido" ? ADM_TAB_ON : ADM_TAB_OFF;
+            $("adm-tab-canceled").className = tab === "cancelado" ? ADM_TAB_ON : ADM_TAB_OFF;
+            $("admin-month-wrap").classList.toggle("hidden", tab === "agenda");
+            $("admin-summary").classList.toggle("hidden", tab === "agenda");
+            if (load) loadAdminAppointments();
+        }
+
         async function loadAdminAppointments() {
             const list = $("admin-appointments-list");
             if (!db) return;
             list.replaceChildren(el("p", { class: "text-sm text-gray-400", text: "Carregando..." }));
             try {
-                const start = Timestamp.fromDate(new Date(`${todayStr()}T00:00:00`));
-                const snap = await getDocs(query(collection(db, "appointments"), where("startAt", ">=", start), orderBy("startAt"), limit(300)));
+                const constraints = [];
+                if (adminTab === "agenda") {
+                    // pendentes: dos últimos 30 dias em diante (assim dá para marcar os que já passaram)
+                    const from = new Date();
+                    from.setDate(from.getDate() - 30);
+                    from.setHours(0, 0, 0, 0);
+                    constraints.push(where("startAt", ">=", Timestamp.fromDate(from)));
+                } else {
+                    const [y, m] = ($("admin-month").value || todayStr().slice(0, 7)).split("-").map(Number);
+                    constraints.push(where("startAt", ">=", Timestamp.fromDate(new Date(y, m - 1, 1))));
+                    constraints.push(where("startAt", "<", Timestamp.fromDate(new Date(y, m, 1))));
+                }
+                const snap = await getDocs(query(collection(db, "appointments"), ...constraints, orderBy("startAt"), limit(500)));
                 const barberId = $("admin-barber-filter").value;
-                const rows = [];
-                snap.forEach((d) => { const a = d.data(); if (!barberId || a.barberId === barberId) rows.push([d.id, a]); });
-                $("total-appointments-count").textContent = `${rows.length} agendamento${rows.length === 1 ? "" : "s"}`;
+                const all = [];
+                snap.forEach((d) => { const a = d.data(); if (!barberId || a.barberId === barberId) all.push([d.id, a]); });
+
+                if (adminTab !== "agenda") {
+                    const done = all.filter(([, a]) => statusOf(a) === "atendido");
+                    $("sum-done").textContent = String(done.length);
+                    $("sum-money").textContent = brl(done.reduce((t, [, a]) => t + Number(a.servicePrice || 0), 0));
+                    $("sum-canceled").textContent = String(all.filter(([, a]) => statusOf(a) === "cancelado").length);
+                }
+
+                let rows = all.filter(([, a]) => statusOf(a) === (adminTab === "agenda" ? "agendado" : adminTab));
+                if (adminTab !== "agenda") rows = rows.reverse(); // histórico: mais recentes primeiro
+                $("total-appointments-count").textContent = String(rows.length);
+                const empty = adminTab === "agenda" ? "Nenhum agendamento pendente."
+                    : adminTab === "atendido" ? "Nenhum atendimento registrado neste mês."
+                    : "Nenhum cancelamento neste mês.";
                 list.replaceChildren(...(rows.length
                     ? rows.map(([t, a]) => appointmentCard(t, a, { admin: true }))
-                    : [el("p", { class: "text-sm text-gray-400", text: "Nenhum agendamento a partir de hoje." })]));
+                    : [el("p", { class: "text-sm text-gray-400", text: empty })]));
             } catch (e) {
                 logError("listar agendamentos", e);
                 list.replaceChildren(el("p", { class: "text-sm text-red-400", text: e.code === "permission-denied"
@@ -819,6 +944,12 @@
             $("btn-save-prices").addEventListener("click", saveServicePrices);
             $("btn-refresh-admin").addEventListener("click", loadAdminAppointments);
             $("admin-barber-filter").addEventListener("change", loadAdminAppointments);
+            $("admin-month").value = todayStr().slice(0, 7);
+            $("admin-month").addEventListener("change", loadAdminAppointments);
+            $("adm-tab-agenda").addEventListener("click", () => switchAdminTab("agenda"));
+            $("adm-tab-done").addEventListener("click", () => switchAdminTab("atendido"));
+            $("adm-tab-canceled").addEventListener("click", () => switchAdminTab("cancelado"));
+            switchAdminTab("agenda", false);
 
             if (auth) onAuthStateChanged(auth, (user) => { PelLog.state.loggedIn = !!user; if (!$("admin-modal").classList.contains("hidden")) updateAdminView(); });
 
