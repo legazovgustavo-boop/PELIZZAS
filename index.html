@@ -273,4 +273,566 @@
                 if (t && t !== window && (t.src || t.href)) { push("recurso", "falha ao carregar " + (t.src || t.href)); return; }
                 push("erro-js", (ev.message || "erro") + " (" + (fileName(ev.filename) || "página") + ":" + (ev.lineno || 0) + ")");
             }, true);
-    
+            window.addEventListener("unhandledrejection", function (ev) {
+                var r = ev.reason;
+                push("promessa", (r && r.code ? "[" + r.code + "] " : "") + (r && r.message ? r.message : String(r)));
+            });
+
+            function makeProtocol() {
+                var d = new Date();
+                var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", rnd = "";
+                for (var i = 0; i < 4; i++) rnd += chars.charAt(Math.floor(Math.random() * chars.length));
+                return "PEL-" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "-" + pad(d.getHours()) + pad(d.getMinutes()) + "-" + rnd;
+            }
+
+            function buildReport(desc) {
+                var now = new Date();
+                var tz = "";
+                try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { /* sem fuso */ }
+                var l = [];
+                l.push("RELATÓRIO DE PROBLEMA - " + SHOP_LABEL);
+                l.push("Protocolo: " + currentProtocol);
+                l.push("Descrição: " + (redact(desc).trim() || "(não informada)"));
+                l.push("Data/hora: " + now.toLocaleString("pt-BR") + (tz ? " (" + tz + ")" : ""));
+                l.push("Versão: " + VERSION);
+                l.push("Página: " + location.pathname);
+                l.push("Navegador: " + clip(navigator.userAgent, 160));
+                l.push("Tela: " + window.innerWidth + "x" + window.innerHeight + " | Idioma: " + navigator.language + " | Online: " + (navigator.onLine ? "sim" : "não"));
+                l.push("Código principal carregou: " + (state.moduleOk ? "sim" : "NÃO") +
+                    " | Firebase configurado: " + (state.configured === null ? "?" : state.configured ? "sim" : "não") +
+                    " | Gerente logado: " + (state.loggedIn ? "sim" : "não"));
+                l.push("");
+                l.push("Últimos eventos (mais recentes embaixo):");
+                if (!buf.length) l.push("- nenhum erro registrado");
+                buf.slice(-10).forEach(function (e) { l.push("- " + hhmmss(e.t) + " " + e.kind + ": " + e.msg); });
+                return l.join("\n");
+            }
+
+            function refresh() {
+                var report = buildReport($("report-desc").value);
+                $("report-preview").value = report;
+                var text = report.length > 1500 ? report.slice(0, 1500) + "\n…(cortado: use Copiar relatório para o texto completo)" : report;
+                $("report-wa").setAttribute("href", "https://wa.me/" + SUPPORT_WHATSAPP + "?text=" + encodeURIComponent(text));
+            }
+
+            function open() {
+                currentProtocol = makeProtocol();
+                $("report-status").textContent = "";
+                $("report-modal").classList.remove("hidden");
+                $("report-modal").classList.add("flex");
+                refresh();
+            }
+            function close() {
+                $("report-modal").classList.add("hidden");
+                $("report-modal").classList.remove("flex");
+            }
+            function copy() {
+                var ta = $("report-preview");
+                function ok() { $("report-status").textContent = "Relatório copiado."; }
+                function fallback() {
+                    ta.focus(); ta.select();
+                    try { document.execCommand("copy"); ok(); }
+                    catch (e) { $("report-status").textContent = "Não consegui copiar. Selecione o texto acima e copie manualmente."; }
+                }
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(ok, fallback);
+                else fallback();
+            }
+
+            $("link-report").addEventListener("click", open);
+            $("btn-report").addEventListener("click", open);
+            $("report-close").addEventListener("click", close);
+            $("report-desc").addEventListener("input", refresh);
+            $("report-copy").addEventListener("click", copy);
+            $("app-version").textContent = "v" + VERSION;
+
+            return { push: push, state: state, open: open, version: VERSION };
+        })();
+    </script>
+
+    <script type="module" onerror="PelLog.push('erro', 'Falha ao carregar o código principal (Firebase ou internet)')">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getFirestore, doc, getDoc, getDocs, setDoc, collection, query, where, orderBy, limit,
+            writeBatch, Timestamp, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        // ============================================================
+        // CONFIGURAÇÃO — é aqui que você personaliza para cada barbearia
+        // ============================================================
+        // 1) Cole os dados do seu projeto Firebase (Configurações do projeto > Seus apps > App da Web).
+        //    Essa chave pode ficar pública; quem protege os dados são as regras do firestore.rules.
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMvUZswb0poartrAaeMjAiSW1jfeat7e8",
+            authDomain: "faca-preta.firebaseapp.com",
+            projectId: "faca-preta",
+            storageBucket: "faca-preta.firebasestorage.app",
+            messagingSenderId: "187515732841",
+            appId: "1:187515732841:web:2af42015b4b11307ee33f8",
+            measurementId: "G-4KCWTGCYLQ"
+        };
+
+        // 2) Dados da barbearia.
+        const SHOP = {
+            name: "Pellizza's Barber Shop",
+            // Precisa ser igual ao valor de duration.value(1, 'h') no firestore.rules.
+            minCancelMinutes: 60,
+            // Horários oferecidos (formato HH:MM). Tirei as 12:00, como no original.
+            slots: ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"],
+            // Dias fechados: 0 = domingo, 1 = segunda ... 6 = sábado. Ex.: [0] fecha aos domingos.
+            closedWeekdays: [],
+            // whatsapp: só números, com 55 + DDD + número. TROQUE pelos números reais.
+            barbers: [
+                { id: "jo", name: "Jô", whatsapp: "5511978989942" },
+                { id: "claudinho", name: "Claudinho", whatsapp: "5511978989942" },
+                { id: "bochecha", name: "Bochecha", whatsapp: "5511978989942" }
+            ],
+            // Preços iniciais. Depois o gerente altera pelo painel (fica salvo no banco).
+            services: [
+                { id: "corte", name: "Corte de Cabelo", price: 40 },
+                { id: "barba", name: "Barba Completa", price: 30 },
+                { id: "combo", name: "Corte + Barba (Combo)", price: 65 },
+                { id: "pezinho", name: "Pézinho / Acabamento", price: 20 }
+            ]
+        };
+        // ============================================================
+
+        const configured = !Object.values(firebaseConfig).some((v) => String(v).startsWith("COLE_"));
+        let db = null, auth = null;
+        if (configured) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        }
+
+        // ---------- utilitários ----------
+        const $ = (id) => document.getElementById(id);
+        const pad = (n) => String(n).padStart(2, "0");
+        const brl = (n) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const fmtDate = (s) => { const [y, m, d] = s.split("-"); return `${d}/${m}/${y}`; };
+        const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+        const startOf = (date, time) => new Date(`${date}T${time}:00`);
+        const slotIdOf = (date, time, barberId) => `${date}_${time}_${barberId}`;
+        const barberById = (id) => SHOP.barbers.find((b) => b.id === id);
+        const TOKEN_RE = /^[0-9a-fA-F-]{20,64}$/;
+
+        // Registro de erros para o relatório de problemas (os textos são limpos de dados pessoais).
+        const PelLog = window.PelLog;
+        PelLog.state.moduleOk = true;
+        PelLog.state.configured = configured;
+        function logError(ctx, e) {
+            console.error(ctx, e);
+            PelLog.push("erro", `${ctx}${e && e.code ? " [" + e.code + "]" : ""}: ${e && e.message ? e.message : e}`);
+        }
+        function logInfo(msg) { PelLog.push("info", msg); }
+
+        // Cria elementos sem usar innerHTML (evita injeção de código pelos textos digitados).
+        function el(tag, props = {}, ...kids) {
+            const node = document.createElement(tag);
+            for (const [k, v] of Object.entries(props)) {
+                if (k === "class") node.className = v;
+                else if (k === "text") node.textContent = v;
+                else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+                else if (v !== undefined && v !== null && v !== false) node.setAttribute(k, v === true ? "" : v);
+            }
+            for (const kid of kids.flat()) if (kid !== null && kid !== undefined && kid !== false) node.append(kid);
+            return node;
+        }
+
+        let toastTimer = null;
+        function notify(text, type = "info") {
+            const t = $("toast");
+            t.textContent = text;
+            t.className = "fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] max-w-sm w-[90%] text-sm rounded-xl px-4 py-3 shadow-xl text-center " +
+                (type === "error" ? "bg-red-700 text-white" : type === "ok" ? "bg-green-700 text-white" : "bg-gray-800 text-white");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.add("hidden"), 5000);
+        }
+
+        const LS_KEY = "pellizzas_my_tokens";
+        const getMyTokens = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; } };
+        const setMyTokens = (arr) => { try { localStorage.setItem(LS_KEY, JSON.stringify([...new Set(arr)])); } catch { /* sem armazenamento */ } };
+        const addMyToken = (t) => setMyTokens([...getMyTokens(), t]);
+        const removeMyToken = (t) => setMyTokens(getMyTokens().filter((x) => x !== t));
+
+        // ---------- serviços ----------
+        let services = SHOP.services.map((s) => ({ ...s }));
+
+        async function loadServices() {
+            services = SHOP.services.map((s) => ({ ...s }));
+            if (db) {
+                try {
+                    const snap = await getDocs(collection(db, "services"));
+                    snap.forEach((d) => {
+                        const data = d.data();
+                        const s = services.find((x) => x.id === d.id);
+                        if (s && typeof data.price === "number" && data.price > 0) s.price = data.price;
+                    });
+                } catch (e) { logError("carregar preços", e); }
+            }
+            renderServiceSelect();
+        }
+
+        function renderServiceSelect() {
+            const sel = $("booking-service");
+            const current = sel.value;
+            sel.replaceChildren(el("option", { value: "", disabled: true, selected: !current, text: "Selecione um serviço" }));
+            for (const s of services) sel.append(el("option", { value: s.id, selected: s.id === current, text: `${s.name} - ${brl(s.price)}` }));
+        }
+
+        function renderBarberSelects() {
+            const sel = $("booking-barber");
+            sel.replaceChildren(el("option", { value: "", disabled: true, selected: true, text: "Selecione o Barbeiro" }));
+            for (const b of SHOP.barbers) sel.append(el("option", { value: b.id, text: b.name }));
+            const f = $("admin-barber-filter");
+            f.replaceChildren(el("option", { value: "", text: "Todos os barbeiros" }));
+            for (const b of SHOP.barbers) f.append(el("option", { value: b.id, text: b.name }));
+        }
+
+        // ---------- horários livres ----------
+        let timesReq = 0;
+        async function refreshTimes() {
+            const my = ++timesReq;
+            const date = $("booking-date").value;
+            const barberId = $("booking-barber").value;
+            const sel = $("booking-time");
+            const hint = $("time-hint");
+            sel.replaceChildren(el("option", { value: "", disabled: true, selected: true, text: "Selecione um horário" }));
+            hint.textContent = "";
+            sel.disabled = true;
+            if (!date || !barberId || !db) return;
+            if (SHOP.closedWeekdays.includes(new Date(`${date}T00:00:00`).getDay())) {
+                hint.textContent = "Fechado neste dia.";
+                return;
+            }
+            hint.textContent = "Carregando horários...";
+            const taken = new Set();
+            try {
+                const snap = await getDocs(query(collection(db, "slots"), where("date", "==", date)));
+                snap.forEach((d) => { const s = d.data(); if (s.barberId === barberId) taken.add(s.time); });
+            } catch (e) {
+                logError("carregar horários", e);
+                if (my === timesReq) hint.textContent = "Não foi possível carregar os horários. Tente de novo.";
+                return;
+            }
+            if (my !== timesReq) return; // o usuário mudou data/barbeiro enquanto carregava
+            const now = new Date();
+            let free = 0;
+            for (const t of SHOP.slots) {
+                if (taken.has(t) || startOf(date, t) <= now) continue;
+                sel.append(el("option", { value: t, text: t }));
+                free++;
+            }
+            sel.disabled = free === 0;
+            hint.textContent = free ? "" : "Sem horários livres neste dia para este profissional.";
+        }
+
+        // ---------- agendar ----------
+        async function handleBooking(e) {
+            e.preventDefault();
+            if (!db) return notify("Sistema ainda não configurado.", "error");
+            const svc = services.find((s) => s.id === $("booking-service").value);
+            const barber = barberById($("booking-barber").value);
+            const date = $("booking-date").value;
+            const time = $("booking-time").value;
+            const clientName = $("client-name").value.trim().replace(/\s+/g, " ");
+            const clientPhone = $("client-phone").value.trim();
+            if (!svc) return notify("Selecione um serviço.", "error");
+            if (!barber) return notify("Selecione o barbeiro.", "error");
+            if (!date) return notify("Selecione a data.", "error");
+            if (!time) return notify("Selecione um horário.", "error");
+            if (clientName.length < 2) return notify("Informe seu nome completo.", "error");
+            if (clientPhone.replace(/\D/g, "").length < 10) return notify("Informe um telefone com DDD.", "error");
+            if (!$("client-consent").checked) return notify("Marque a concordância sobre o uso dos seus dados.", "error");
+            const start = startOf(date, time);
+            if (start <= new Date()) return notify("Esse horário já passou. Escolha outro.", "error");
+
+            const token = crypto.randomUUID();
+            const data = {
+                serviceId: svc.id, serviceName: svc.name, servicePrice: Number(svc.price),
+                barberId: barber.id, barberName: barber.name,
+                date, time, startAt: Timestamp.fromDate(start),
+                clientName, clientPhone, consent: true,
+                createdAt: serverTimestamp()
+            };
+            const btn = $("btn-submit-booking");
+            btn.disabled = true;
+            try {
+                const batch = writeBatch(db);
+                batch.set(doc(db, "appointments", token), data);
+                batch.set(doc(db, "slots", slotIdOf(date, time, barber.id)), {
+                    token, date, time, barberId: barber.id, startAt: Timestamp.fromDate(start)
+                });
+                await batch.commit();
+            } catch (err) {
+                logError("agendar", err);
+                if (err.code === "permission-denied") {
+                    notify("Esse horário acabou de ser ocupado. Escolha outro.", "error");
+                    await refreshTimes();
+                } else {
+                    notify("Não foi possível agendar agora. Verifique a internet e tente de novo.", "error");
+                }
+                btn.disabled = false;
+                return;
+            }
+            addMyToken(token);
+            logInfo("agendamento criado");
+            btn.disabled = false;
+            $("appointmentForm").reset();
+            renderServiceSelect();
+            refreshTimes();
+            showConfirmation(token, { ...data, startAt: Timestamp.fromDate(start) });
+        }
+
+        function bookingLink(token) {
+            return `${location.origin}${location.pathname}?c=${token}`;
+        }
+
+        function showConfirmation(token, a) {
+            const barber = barberById(a.barberId);
+            $("confirm-details").replaceChildren(
+                el("p", {}, el("strong", { text: "Serviço: " }), `${a.serviceName} (${brl(a.servicePrice)})`),
+                el("p", {}, el("strong", { text: "Profissional: " }), a.barberName),
+                el("p", {}, el("strong", { text: "Quando: " }), `${fmtDate(a.date)} às ${a.time}`),
+                el("p", {}, el("strong", { text: "Nome: " }), a.clientName)
+            );
+            const msg = `Olá ${a.barberName}! Agendei ${a.serviceName} para ${fmtDate(a.date)} às ${a.time}. Meu nome é ${a.clientName}.`;
+            $("confirm-wa").setAttribute("href", `https://wa.me/${barber ? barber.whatsapp : ""}?text=${encodeURIComponent(msg)}`);
+            $("confirm-copy").onclick = async () => {
+                try { await navigator.clipboard.writeText(bookingLink(token)); notify("Link copiado.", "ok"); }
+                catch { notify("Não consegui copiar. Segure o link para copiar: " + bookingLink(token)); }
+            };
+            $("content-booking").classList.add("hidden");
+            $("content-my-appointments").classList.add("hidden");
+            $("content-confirm").classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // ---------- meus atendimentos ----------
+        function canCancel(startAt) {
+            return startAt.toDate().getTime() - Date.now() > SHOP.minCancelMinutes * 60000;
+        }
+
+        function appointmentCard(token, a, opts = {}) {
+            const cancellable = opts.admin || canCancel(a.startAt);
+            const past = a.startAt.toDate() < new Date();
+            return el("div", { class: "bg-dark-800 border border-gray-700/60 rounded-xl p-4 text-sm space-y-1" },
+                el("div", { class: "flex justify-between gap-2" },
+                    el("strong", { class: "text-white", text: `${fmtDate(a.date)} às ${a.time}` }),
+                    el("span", { class: "text-gold-400", text: brl(a.servicePrice) })
+                ),
+                el("p", { class: "text-gray-300", text: `${a.serviceName} com ${a.barberName}` }),
+                opts.admin ? el("p", { class: "text-gray-300", text: `${a.clientName} — ${a.clientPhone}` }) : null,
+                opts.admin ? el("a", {
+                    class: "text-xs text-green-400 underline",
+                    target: "_blank", rel: "noopener",
+                    href: `https://wa.me/55${a.clientPhone.replace(/\D/g, "").replace(/^55/, "")}`,
+                    text: "Chamar no WhatsApp"
+                }) : null,
+                past ? el("p", { class: "text-xs text-gray-500", text: "Horário já passou." }) :
+                    cancellable
+                        ? el("button", {
+                            type: "button",
+                            class: "mt-2 text-xs bg-red-600/20 text-red-400 px-3 py-1.5 rounded-lg border border-red-500/30 cursor-pointer",
+                            text: "Cancelar agendamento",
+                            onclick: () => cancelAppointment(token, a, opts)
+                        })
+                        : el("p", { class: "text-xs text-gray-500 mt-2", text: "Prazo de cancelamento encerrado (menos de 1 hora)." })
+            );
+        }
+
+        async function renderAppointments() {
+            const list = $("appointments-list");
+            const tokens = getMyTokens();
+            if (!db) { list.replaceChildren(el("p", { class: "text-sm text-gray-400", text: "Sistema ainda não configurado." })); return; }
+            if (!tokens.length) { list.replaceChildren(el("p", { class: "text-sm text-gray-400", text: "Nenhum agendamento encontrado neste aparelho. Se você tem um link, cole acima." })); return; }
+            list.replaceChildren(el("p", { class: "text-sm text-gray-400", text: "Carregando..." }));
+            const found = [];
+            for (const t of tokens) {
+                try {
+                    const snap = await getDoc(doc(db, "appointments", t));
+                    if (snap.exists()) found.push([t, snap.data()]);
+                    else removeMyToken(t);
+                } catch (e) { logError("buscar agendamento", e); }
+            }
+            found.sort((x, y) => x[1].startAt.toMillis() - y[1].startAt.toMillis());
+            list.replaceChildren(...(found.length
+                ? found.map(([t, a]) => appointmentCard(t, a))
+                : [el("p", { class: "text-sm text-gray-400", text: "Nenhum agendamento ativo." })]));
+        }
+
+        async function cancelAppointment(token, a, opts = {}) {
+            if (!opts.admin && !canCancel(a.startAt)) return notify("O prazo de cancelamento já passou.", "error");
+            if (!confirm("Deseja mesmo cancelar este agendamento?")) return;
+            try {
+                const batch = writeBatch(db);
+                batch.delete(doc(db, "appointments", token));
+                batch.delete(doc(db, "slots", slotIdOf(a.date, a.time, a.barberId)));
+                await batch.commit();
+            } catch (e) {
+                logError("cancelar", e);
+                notify(e.code === "permission-denied"
+                    ? "Não foi possível cancelar: o prazo de 1 hora já passou."
+                    : "Não foi possível cancelar agora. Tente de novo.", "error");
+                return;
+            }
+            removeMyToken(token);
+            logInfo("agendamento cancelado");
+            notify("Agendamento cancelado.", "ok");
+            if (opts.admin) loadAdminAppointments(); else renderAppointments();
+            refreshTimes();
+        }
+
+        function lookupByInput(e) {
+            e.preventDefault();
+            const raw = $("lookup-code").value.trim();
+            const m = raw.match(/[?&]c=([0-9a-fA-F-]{20,64})/);
+            const token = m ? m[1] : raw;
+            if (!TOKEN_RE.test(token)) return notify("Código inválido. Cole o link completo ou o código.", "error");
+            addMyToken(token);
+            $("lookup-code").value = "";
+            renderAppointments();
+        }
+
+        // ---------- abas ----------
+        const TAB_ON = "flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 bg-gold-500 text-black shadow";
+        const TAB_OFF = "flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center space-x-2 text-gray-400 hover:text-white";
+        function switchTab(which) {
+            $("content-confirm").classList.add("hidden");
+            const booking = which === "booking";
+            $("content-booking").classList.toggle("hidden", !booking);
+            $("content-my-appointments").classList.toggle("hidden", booking);
+            $("tab-btn-booking").className = booking ? TAB_ON : TAB_OFF;
+            $("tab-btn-appointments").className = booking ? TAB_OFF : TAB_ON;
+            if (!booking) renderAppointments();
+        }
+
+        // ---------- área do gerente ----------
+        function openAdmin() { $("admin-modal").classList.remove("hidden"); $("admin-modal").classList.add("flex"); updateAdminView(); }
+        function closeAdmin() { $("admin-modal").classList.add("hidden"); $("admin-modal").classList.remove("flex"); }
+
+        function updateAdminView() {
+            const user = auth && auth.currentUser;
+            $("admin-login-view").classList.toggle("hidden", !!user);
+            $("admin-dashboard-view").classList.toggle("hidden", !user);
+            if (user) {
+                $("admin-user-label").textContent = `Conectado como ${user.email}`;
+                renderPriceEditor();
+                loadAdminAppointments();
+            }
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            const err = $("admin-login-error");
+            err.textContent = "";
+            if (!auth) { err.textContent = "Sistema ainda não configurado."; return; }
+            try {
+                await signInWithEmailAndPassword(auth, $("admin-email").value.trim(), $("admin-pass").value);
+                $("admin-pass").value = "";
+                logInfo("login gerente ok");
+            } catch (ex) {
+                logError("login gerente", ex);
+                const bad = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"];
+                err.textContent = bad.includes(ex.code) ? "E-mail ou senha incorretos."
+                    : ex.code === "auth/too-many-requests" ? "Muitas tentativas. Aguarde alguns minutos."
+                    : "Não foi possível entrar agora.";
+            }
+        }
+
+        function renderPriceEditor() {
+            const box = $("services-price-list");
+            box.replaceChildren(...services.map((s) => el("div", { class: "flex items-center justify-between gap-3" },
+                el("label", { for: `price-${s.id}`, class: "text-sm text-gray-200", text: s.name }),
+                el("input", {
+                    id: `price-${s.id}`, "data-service": s.id, type: "number", min: "1", step: "0.5", value: String(s.price),
+                    class: "w-28 bg-dark-900 border border-gray-700 rounded-lg p-2 text-white text-sm"
+                })
+            )));
+        }
+
+        async function saveServicePrices() {
+            const updates = [];
+            for (const s of services) {
+                const input = $(`price-${s.id}`);
+                const price = parseFloat(String(input.value).replace(",", "."));
+                if (!Number.isFinite(price) || price <= 0) return notify(`Preço inválido em "${s.name}".`, "error");
+                updates.push({ id: s.id, name: s.name, price });
+            }
+            try {
+                await Promise.all(updates.map((u) => setDoc(doc(db, "services", u.id), { name: u.name, price: u.price })));
+            } catch (e) {
+                logError("salvar preços", e);
+                return notify("Não foi possível salvar. Confira se o seu e-mail está liberado nas regras.", "error");
+            }
+            await loadServices();
+            renderPriceEditor();
+            notify("Preços atualizados.", "ok");
+        }
+
+        async function loadAdminAppointments() {
+            const list = $("admin-appointments-list");
+            if (!db) return;
+            list.replaceChildren(el("p", { class: "text-sm text-gray-400", text: "Carregando..." }));
+            try {
+                const start = Timestamp.fromDate(new Date(`${todayStr()}T00:00:00`));
+                const snap = await getDocs(query(collection(db, "appointments"), where("startAt", ">=", start), orderBy("startAt"), limit(300)));
+                const barberId = $("admin-barber-filter").value;
+                const rows = [];
+                snap.forEach((d) => { const a = d.data(); if (!barberId || a.barberId === barberId) rows.push([d.id, a]); });
+                $("total-appointments-count").textContent = `${rows.length} agendamento${rows.length === 1 ? "" : "s"}`;
+                list.replaceChildren(...(rows.length
+                    ? rows.map(([t, a]) => appointmentCard(t, a, { admin: true }))
+                    : [el("p", { class: "text-sm text-gray-400", text: "Nenhum agendamento a partir de hoje." })]));
+            } catch (e) {
+                logError("listar agendamentos", e);
+                list.replaceChildren(el("p", { class: "text-sm text-red-400", text: e.code === "permission-denied"
+                    ? "Seu e-mail não tem permissão para ver os agendamentos. Peça para liberarem nas regras."
+                    : "Não foi possível carregar os agendamentos." }));
+            }
+        }
+
+        // ---------- inicialização ----------
+        function init() {
+            $("shop-title").textContent = SHOP.name.split(" ")[0].toUpperCase();
+            if (!configured) {
+                $("config-warning").classList.remove("hidden");
+                $("btn-submit-booking").disabled = true;
+            }
+            $("booking-date").min = todayStr();
+            renderBarberSelects();
+            $("booking-time").replaceChildren(el("option", { value: "", disabled: true, selected: true, text: "Selecione um horário" }));
+            renderServiceSelect();
+
+            $("tab-btn-booking").addEventListener("click", () => switchTab("booking"));
+            $("tab-btn-appointments").addEventListener("click", () => switchTab("my"));
+            $("appointmentForm").addEventListener("submit", handleBooking);
+            $("booking-date").addEventListener("change", refreshTimes);
+            $("booking-barber").addEventListener("change", refreshTimes);
+            $("lookup-form").addEventListener("submit", lookupByInput);
+            $("confirm-new").addEventListener("click", () => switchTab("booking"));
+
+            $("btn-open-manager").addEventListener("click", openAdmin);
+            $("btn-close-modal").addEventListener("click", closeAdmin);
+            $("admin-login-form").addEventListener("submit", handleAdminLogin);
+            $("btn-logout-admin").addEventListener("click", async () => { if (auth) await signOut(auth); });
+            $("btn-save-prices").addEventListener("click", saveServicePrices);
+            $("btn-refresh-admin").addEventListener("click", loadAdminAppointments);
+            $("admin-barber-filter").addEventListener("change", loadAdminAppointments);
+
+            if (auth) onAuthStateChanged(auth, (user) => { PelLog.state.loggedIn = !!user; if (!$("admin-modal").classList.contains("hidden")) updateAdminView(); });
+
+            loadServices();
+
+            const c = new URLSearchParams(location.search).get("c");
+            if (c && TOKEN_RE.test(c)) {
+                addMyToken(c);
+                history.replaceState(null, "", location.pathname);
+                switchTab("my");
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
